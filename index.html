@@ -131,7 +131,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* PDF */
 @media print{
-  #home-screen,#app-screen .top-bar,.filter-wrap,.search-result,.bus-wrap,.action-btns,#falt-overlay,#alert-completo,#edit-overlay,#exit-overlay{display:none!important}
+  #home-screen,#app-screen .top-bar,.filter-wrap,.search-result,.bus-wrap,.action-btns,#falt-overlay,#alert-completo,#edit-overlay{display:none!important}
   body{background:#fff}
   #pdf-report{display:block!important}
 }
@@ -152,6 +152,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
   .btn-wpp{padding:11px 8px;background:#25D366;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px}
   .btn-wpp:active{background:#1da851}
+  .btn-back{padding:11px 8px;background:#fff;border:1.5px solid #c0c8d4;border-radius:8px;color:#555;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px}
+  .btn-back:active{background:#f0f2f5}
+  body.dark .btn-back{background:#2a2a2a;border-color:#3a3a3a;color:#aaa}
 
   /* Dark mode */
   body.dark{background:#121212;color:#f0f0f0}
@@ -193,9 +196,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   body.dark .alert-box{background:#1e1e1e}
   body.dark .alert-title{color:#4dd9a0}
   body.dark .alert-sub{color:#aaa}
-  body.dark .btn-exit{background:#1e1e1e}
-  body.dark #exit-overlay > div{background:#1e1e1e}
-  body.dark #exit-overlay .cancel-btn{background:#2a2a2a;border-color:#3a3a3a;color:#aaa}
   body.dark .search-result{background:#0d2a40;color:#7dc3f0}
   body.dark .corridor{color:#333}
   body.dark .win-dot{background:#2a4a6a}
@@ -272,10 +272,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   .filter-btn.drag-over{border-color:#1a3a5c;border-style:dashed;transform:scale(1.05)}
 </style>
 
+
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1976d2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+
+
+
+
 
 </head>
 <body>
@@ -297,7 +302,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div id="app-screen">
   <div class="top-bar">
     <div class="top-bar-row1">
-      <button class="back-btn" onclick="goHome()">← Voltar</button>
       <div class="top-title" id="top-title"></div>
       <button class="settings-btn-gear" onclick="openSettings()" id="top-settings-btn">⚙️</button>
       <button class="dark-btn" onclick="toggleDark()" id="top-dark-btn">🌙</button>
@@ -346,7 +350,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="btn-pdf" onclick="exportPDF()">📄 PDF</button>
     <button class="btn-falt" onclick="showFaltosos()">📋 Faltosos</button>
     <button class="btn-wpp" onclick="shareWhatsApp()">📲 WhatsApp</button>
-    <button class="btn-exit" onclick="exitApp()">🚪 Sair</button>
+    <button class="btn-back" onclick="goHome()">← Voltar</button>
   </div>
 </div>
 
@@ -388,19 +392,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="alert-title">Ônibus Completo!</div>
     <div class="alert-sub" id="alert-sub">Todos os passageiros embarcaram.<br>Boa viagem! 🚌</div>
     <button class="alert-ok" onclick="document.getElementById('alert-completo').style.display='none'">Fechar</button>
-  </div>
-</div>
-
-<!-- Exit -->
-<div id="exit-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:14px;padding:28px 22px;max-width:300px;width:90%;text-align:center">
-    <div style="font-size:36px;margin-bottom:10px">🚌</div>
-    <div style="font-size:16px;font-weight:700;margin-bottom:8px;color:#1a1a1a">Encerrar sistema?</div>
-    <div style="font-size:13px;color:#666;margin-bottom:20px">O progresso ficará salvo. Você poderá retomar depois.</div>
-    <div style="display:flex;gap:10px">
-      <button onclick="document.getElementById('exit-overlay').style.display='none'" style="flex:1;padding:10px;border:1.5px solid #ddd;border-radius:8px;background:#fff;font-size:13px;cursor:pointer;font-family:inherit">Cancelar</button>
-      <button onclick="confirmExit()" style="flex:1;padding:10px;border:none;border-radius:8px;background:#c0303a;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Sair</button>
-    </div>
   </div>
 </div>
 
@@ -1045,12 +1036,6 @@ function exportPDF(){
   window.print();
 }
 
-// ===== EXIT =====
-function exitApp(){document.getElementById('exit-overlay').style.display='flex';}
-function confirmExit(){
-  document.getElementById('exit-overlay').style.display='none';
-  document.body.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;background:#f0f2f5;color:#888;gap:10px"><div style="font-size:48px">🚌</div><div style="font-size:16px;font-weight:600;color:#1a3a5c">Sistema encerrado</div><div style="font-size:13px">Progresso salvo. Até a próxima!</div></div>';
-}
 
 
 function shareWhatsApp(){
@@ -1156,21 +1141,37 @@ function handleExcelImport(event){
       const days = [];
       wb.SheetNames.forEach(sheetName => {
         const ws = wb.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-        if(rows.length < 2) return;
+        // Read cell by cell to avoid SheetJS sheet_to_json quirks
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        // Find header row (row 0) to detect column indexes
+        const headers = {};
+        for(let c=range.s.c; c<=range.e.c; c++){
+          const cell = ws[XLSX.utils.encode_cell({r:0, c})];
+          const val = cell ? (cell.v||'').toString().trim().toUpperCase() : '';
+          if(val.includes('POLTRONA')) headers.p=c;
+          else if(val.includes('NOME')) headers.n=c;
+          else if(val.includes('LOCALIDADE')||val.includes('LOCAL')) headers.l=c;
+          else if(val.includes('COLO')) headers.c=c;
+        }
+        const iP=headers.p??0, iN=headers.n??1, iL=headers.l??2, iC=headers.c??3;
+
         const passengers = {};
         const locs = [], seenLocs = new Set();
-        for(let i=1; i<rows.length; i++){
-          const row = rows[i];
-          const num = parseInt(row[0]);
-          const name = (row[1]||'').toString().trim().toUpperCase();
-          const loc = (row[2]||'').toString().trim().toUpperCase();
-          const colo = (row[3]||'').toString().trim().toUpperCase();
-          if(!num || !name) continue;
-          const entry = {n: name, l: loc};
-          if(colo) entry.c = colo;
+        for(let r=range.s.r+1; r<=range.e.r; r++){
+          const cellP = ws[XLSX.utils.encode_cell({r, c:iP})];
+          const cellN = ws[XLSX.utils.encode_cell({r, c:iN})];
+          const cellL = ws[XLSX.utils.encode_cell({r, c:iL})];
+          const cellC = ws[XLSX.utils.encode_cell({r, c:iC})];
+          const num = cellP ? parseInt(cellP.v) : NaN;
+          const name = cellN ? (cellN.v||'').toString().trim().toUpperCase() : '';
+          const loc = cellL ? (cellL.v||'').toString().trim().toUpperCase() : '';
+          const colo = cellC ? (cellC.v||'').toString().trim().toUpperCase() : '';
+          if(!num || isNaN(num)) continue;
+          const entry = {n: name||'-', l: loc||'VAZIO'};
+          if(colo && colo !== '-') entry.c = colo;
           passengers[num] = entry;
-          if(loc && !seenLocs.has(loc)){ seenLocs.add(loc); locs.push(loc); }
+          const locKey = loc||'VAZIO';
+          if(!seenLocs.has(locKey)){ seenLocs.add(locKey); locs.push(locKey); }
         }
         if(Object.keys(passengers).length > 0){
           days.push({label: sheetName, passengers, locs});
@@ -1355,6 +1356,7 @@ try{
 }
 </script>
 
+
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -1362,6 +1364,11 @@ if ('serviceWorker' in navigator) {
     });
 }
 </script>
+
+
+
+
+
 
 </body>
 </html>
