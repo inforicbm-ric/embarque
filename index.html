@@ -1,0 +1,2231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Embarque — Viagens</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
+
+/* ===== TELA INICIAL ===== */
+#home-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.home-icon{font-size:52px;margin-bottom:12px}
+.home-title{font-size:22px;font-weight:800;color:#1a3a5c;margin-bottom:4px;text-align:center}
+.home-sub{font-size:14px;color:#888;margin-bottom:28px;text-align:center}
+.day-cards{width:100%;max-width:380px;display:flex;flex-direction:column;gap:12px}
+.day-card{background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;display:flex;align-items:center;gap:14px;transition:transform .1s,box-shadow .1s}
+.day-card:active{transform:scale(0.98);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.day-card-icon{width:46px;height:46px;border-radius:12px;background:#1a3a5c;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.day-card-info{flex:1}
+.day-card-label{font-size:16px;font-weight:700;color:#1a3a5c}
+.day-card-sub{font-size:12px;color:#888;margin-top:2px}
+.day-card-prog{margin-top:6px;background:#f0f0f0;border-radius:10px;height:6px;overflow:hidden}
+.day-card-bar{height:6px;border-radius:10px;background:linear-gradient(90deg,#4dd9a0,#2ab87a);transition:width .4s}
+.day-card-pct{font-size:11px;color:#4dd9a0;font-weight:700;margin-top:3px}
+.day-card-arrow{font-size:20px;color:#ccc;flex-shrink:0}
+
+/* ===== APP SCREEN ===== */
+#app-screen{display:none}
+.top-bar{background:#1a3a5c;color:#fff;padding:10px 14px 10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.top-bar-row1{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.back-btn{background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px}
+.back-btn:active{background:rgba(255,255,255,.25)}
+.top-title{font-size:14px;font-weight:700;flex:1;text-align:center}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.stat{background:rgba(255,255,255,.12);border-radius:8px;padding:6px 4px;text-align:center}
+.stat-n{font-size:22px;font-weight:700;line-height:1}
+.stat-n.emb{color:#4dd9a0}
+.stat-n.falt{color:#f4896b}
+.stat-l{font-size:10px;opacity:.8;margin-top:2px}
+.progress-wrap{margin-top:10px;margin-bottom:12px}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;opacity:.8;margin-bottom:4px}
+.progress-track{background:rgba(255,255,255,.15);border-radius:20px;height:10px;overflow:hidden}
+.progress-bar{height:10px;border-radius:20px;background:linear-gradient(90deg,#f4c56b,#f4a12b);transition:width .4s ease;width:0%}
+.search-row{position:relative}
+.search-row svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:#888;stroke-width:2;fill:none;pointer-events:none}
+.search-row input{width:100%;padding:9px 36px;border-radius:8px;border:none;background:#fff;font-size:14px;color:#1a1a1a;outline:none}
+.search-row .clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;color:#aaa;cursor:pointer;display:none;line-height:1;padding:0}
+.search-result{background:#e8f4fd;border-left:3px solid #3b8fd4;border-radius:0 6px 6px 0;padding:7px 10px;font-size:12px;color:#1a5276;margin:6px 14px 0;display:none}
+.filter-wrap{padding:8px 14px 4px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.filter-btn{padding:6px 12px;border-radius:20px;border:1.5px solid #c0c8d4;background:#fff;color:#444;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s,color .15s;white-space:nowrap}
+.filter-btn.active{background:#1a3a5c;border-color:#1a3a5c;color:#fff}
+.bus-wrap{padding:10px 12px 20px}
+.bus-card{background:#fff;border-radius:14px;padding:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.bus-front{display:flex;align-items:center;justify-content:center;gap:6px;padding:4px 0 10px;border-bottom:1.5px dashed #e0e0e0;margin-bottom:8px}
+.bus-front span{font-size:11px;color:#888}
+.row{display:grid;grid-template-columns:1fr 22px 1fr;gap:4px;margin-bottom:4px}
+.seat{background:#f7f8fa;border:1.5px solid #e8eaed;border-radius:8px;padding:5px 3px 4px;cursor:pointer;min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;position:relative;transition:background .12s,border-color .12s}
+.seat:has(.colo-tag){min-height:70px}
+.seat .num{font-size:9px;font-weight:700;color:#aaa;line-height:1}
+.seat .name{font-size:11px;color:#333;text-align:center;line-height:1.3;margin-top:2px;word-break:break-word;hyphens:auto}
+.seat .chk{font-size:16px;margin-top:2px;display:none}
+.seat.checked{background:#d4f5e7;border-color:#34c97e}
+.seat.checked .num{color:#1a8a52}
+.seat.checked .name{color:#145c38;font-weight:600}
+.seat.checked .chk{display:block}
+.seat.hl{border:2.5px solid #3b8fd4;background:#e8f4fd}
+.seat.hl .name{color:#1a5276}
+.seat.hidden{visibility:hidden}
+.row.all-hidden{display:none}
+.win-dot{position:absolute;top:3px;right:4px;width:5px;height:5px;border-radius:50%;background:#c5d8f0}
+.corridor{display:flex;align-items:center;justify-content:center;color:#ddd;font-size:8px}
+.footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid #f0f0f0}
+.leg{display:flex;align-items:center;gap:4px;font-size:11px;color:#888}
+.leg-sq{width:13px;height:13px;border-radius:3px;border:1.5px solid}
+.leg-sq.ok{background:#d4f5e7;border-color:#34c97e}
+.leg-sq.pend{background:#f7f8fa;border-color:#e8eaed}
+.action-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 14px 14px}
+.btn-pdf{padding:11px 8px;background:#1a3a5c;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px}
+.btn-pdf:active{background:#122840}
+.btn-falt{padding:11px 8px;background:#f4a12b;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px}
+.btn-falt:active{background:#d4881a}
+.btn-exit{padding:11px 8px;background:#fff;border:1.5px solid #c0303a;border-radius:8px;color:#c0303a;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px}
+.btn-exit:active{background:#fff0f1}
+.obs-wrap{margin-top:12px;padding:0 0 0 0}
+.obs-label{display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:5px}
+.obs-field{width:100%;min-height:120px;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:inherit;color:#1a1a1a;background:#fafafa;resize:vertical;outline:none;line-height:1.5}
+.obs-field:focus{border-color:#1a3a5c;background:#fff}
+.reset-btn{width:100%;margin-top:10px;padding:10px;background:none;border:1.5px solid #e0e0e0;border-radius:8px;color:#888;font-size:12px;cursor:pointer;font-family:inherit}
+.reset-btn:active{background:#f5f5f5}
+
+/* Faltosos panel */
+#falt-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:998;align-items:flex-end;justify-content:center}
+.falt-panel{background:#fff;border-radius:18px 18px 0 0;width:100%;max-height:75vh;display:flex;flex-direction:column;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.falt-header{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 10px;border-bottom:1px solid #f0f0f0}
+.falt-header h3{font-size:15px;font-weight:700;color:#1a1a1a}
+.falt-close{background:none;border:none;font-size:22px;color:#aaa;cursor:pointer;padding:0;line-height:1}
+.falt-body{overflow-y:auto;padding:10px 16px 20px;flex:1}
+.falt-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f5f5f5}
+.falt-item:last-child{border-bottom:none}
+.falt-num{background:#f0f0f0;border-radius:6px;padding:4px 7px;font-size:11px;font-weight:700;color:#555;min-width:30px;text-align:center}
+.falt-info{flex:1}
+.falt-name{font-size:13px;font-weight:600;color:#1a1a1a}
+.falt-loc{font-size:11px;color:#888;margin-top:1px}
+.falt-empty{text-align:center;padding:30px 0;color:#4dd9a0;font-size:14px;font-weight:600}
+
+/* Edit panel */
+#edit-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:997;align-items:center;justify-content:center}
+.edit-panel{background:#fff;border-radius:16px;padding:22px 18px;max-width:320px;width:90%}
+.edit-panel h3{font-size:14px;font-weight:700;color:#1a3a5c;margin-bottom:4px}
+.edit-sub{font-size:12px;color:#aaa;margin-bottom:14px}
+.edit-panel input{width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;font-family:inherit;color:#1a1a1a;outline:none;text-transform:uppercase;margin-bottom:14px}
+.edit-panel input:focus{border-color:#1a3a5c}
+.edit-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.edit-cancel{padding:10px;background:#fff;border:1.5px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:#666}
+.edit-save{padding:10px;background:#1a3a5c;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:#fff}
+
+/* Alert completo */
+#alert-completo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center}
+.alert-box{background:#fff;border-radius:18px;padding:32px 24px;max-width:300px;width:90%;text-align:center;animation:popIn .3s ease}
+@keyframes popIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+.alert-icon{font-size:52px;margin-bottom:8px}
+.alert-title{font-size:20px;font-weight:800;color:#1a3a5c;margin-bottom:6px}
+.alert-sub{font-size:14px;color:#555;margin-bottom:20px;line-height:1.5}
+.alert-ok{width:100%;padding:12px;background:#1a3a5c;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+
+/* Exit overlay */
+#exit-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;align-items:center;justify-content:center}
+
+/* PDF */
+@media print{
+  #home-screen,#app-screen .top-bar,.filter-wrap,.search-result,.bus-wrap,.action-btns,#falt-overlay,#alert-completo,#edit-overlay,#pdf-pick-overlay{display:none!important}
+  body{background:#fff}
+  #pdf-report:not(:empty),#pdf-map-report:not(:empty){display:block!important}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+}
+#pdf-report{display:none;font-family:Arial,sans-serif;padding:20px;color:#111}
+#pdf-report h1{font-size:18px;margin-bottom:4px}
+#pdf-report .rdate{font-size:12px;color:#666;margin-bottom:16px}
+#pdf-report h2{font-size:13px;font-weight:700;margin:14px 0 6px;padding-bottom:3px;border-bottom:1px solid #ddd}
+#pdf-report table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px}
+#pdf-report td,#pdf-report th{padding:5px 8px;border:1px solid #ddd;text-align:left}
+#pdf-report th{background:#f0f0f0;font-weight:700}
+#pdf-report .obs-box{font-size:12px;border:1px solid #ddd;border-radius:4px;padding:10px;white-space:pre-wrap;min-height:40px;background:#fafafa}
+#pdf-report .summary{display:flex;gap:16px;margin-bottom:14px}
+#pdf-report .sum-item{background:#f5f5f5;border-radius:6px;padding:8px 14px;text-align:center}
+#pdf-report .sum-n{font-size:22px;font-weight:700}
+#pdf-report .sum-l{font-size:11px;color:#666}
+#pdf-report .sum-n.ok{color:#1a8a52}
+#pdf-report .sum-n.falt{color:#c0303a}
+
+  .btn-wpp{padding:11px 8px;background:#25D366;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px}
+  .btn-wpp:active{background:#1da851}
+  .btn-back{padding:11px 8px;background:#fff;border:1.5px solid #c0c8d4;border-radius:8px;color:#555;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px}
+  .btn-back:active{background:#f0f2f5}
+  body.dark .btn-back{background:#2a2a2a;border-color:#3a3a3a;color:#aaa}
+
+  /* Dark mode */
+  body.dark{background:#121212;color:#f0f0f0}
+  body.dark .home-title{color:#4dd9a0}
+  body.dark .home-sub{color:#666}
+  body.dark .day-card{background:#1e1e1e;box-shadow:none}
+  body.dark .day-card-label{color:#4dd9a0}
+  body.dark .day-card-sub{color:#666}
+  body.dark .day-card-prog{background:#2a2a2a}
+  body.dark .day-card-arrow{color:#444}
+  body.dark .bus-card{background:#1e1e1e;box-shadow:none}
+  body.dark .seat{background:#2a2a2a;border-color:#3a3a3a}
+  body.dark .seat .name{color:#ddd}
+  body.dark .seat .num{color:#666}
+  body.dark .seat.checked{background:#0d3d26;border-color:#2ea86a}
+  body.dark .seat.checked .name{color:#7ee5b3}
+  body.dark .seat.checked .num{color:#2ea86a}
+  body.dark .seat.hl{background:#0d2a40;border-color:#3b8fd4}
+  body.dark .seat.hl .name{color:#7dc3f0}
+  body.dark .search-row input{background:#2a2a2a;color:#f0f0f0}
+  body.dark .filter-btn{background:#2a2a2a;border-color:#3a3a3a;color:#ccc}
+  body.dark .filter-btn.active{background:#3b8fd4;border-color:#3b8fd4;color:#fff}
+  body.dark .obs-field{background:#2a2a2a;border-color:#3a3a3a;color:#f0f0f0}
+  body.dark .obs-label{color:#aaa}
+  body.dark .reset-btn{border-color:#3a3a3a;color:#666}
+  body.dark .leg{color:#666}
+  body.dark .bus-front span{color:#555}
+  body.dark .falt-panel{background:#1e1e1e}
+  body.dark .falt-header{border-color:#2a2a2a}
+  body.dark .falt-header h3{color:#f0f0f0}
+  body.dark .falt-item{border-color:#2a2a2a}
+  body.dark .falt-num{background:#2a2a2a;color:#aaa}
+  body.dark .falt-name{color:#f0f0f0}
+  body.dark .edit-panel{background:#1e1e1e}
+  body.dark .edit-panel h3{color:#4dd9a0}
+  body.dark .edit-panel input{background:#2a2a2a;border-color:#3a3a3a;color:#f0f0f0}
+  body.dark .edit-cancel{background:#2a2a2a;border-color:#3a3a3a;color:#aaa}
+  body.dark .edit-sub{color:#666}
+  body.dark .alert-box{background:#1e1e1e}
+  body.dark .alert-title{color:#4dd9a0}
+  body.dark .alert-sub{color:#aaa}
+  body.dark .search-result{background:#0d2a40;color:#7dc3f0}
+  body.dark .corridor{color:#333}
+  body.dark .win-dot{background:#2a4a6a}
+  body.dark .bus-wrap{background:#121212}
+  .dark-btn{background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1}
+  .dark-btn:active{background:rgba(255,255,255,.25)}
+  .home-dark-btn{position:absolute;top:20px;right:20px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  body.dark .home-dark-btn{background:#2a2a2a;border-color:#3a3a3a}
+  #home-screen{position:relative}
+
+  .seat .colo-badge{position:absolute;bottom:2px;left:3px;font-size:9px}
+  .colo-tag{font-size:8px;color:#888;text-align:center;line-height:1.1;margin-top:1px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  body.dark .colo-tag{color:#777}
+  .stats{grid-template-columns:repeat(3,1fr)}
+  .stats.with-colo{grid-template-columns:repeat(4,1fr)}
+  .stat-n.colo{color:#f0a830}
+
+  .home-settings-btn{position:absolute;top:20px;left:20px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  body.dark .home-settings-btn{background:#2a2a2a;border-color:#3a3a3a}
+  #settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:996;align-items:center;justify-content:center}
+  .settings-panel{background:#fff;border-radius:16px;padding:22px 20px;max-width:340px;width:90%;max-height:85vh;overflow-y:auto}
+  .settings-panel h3{font-size:16px;font-weight:700;color:#1a3a5c;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+  .settings-sub{font-size:12px;color:#888;margin-bottom:18px}
+  .settings-section{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #f0f0f0}
+  .settings-section:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .settings-section-title{font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:4px}
+  .settings-section-desc{font-size:11.5px;color:#888;margin-bottom:10px;line-height:1.4}
+  .settings-btn{width:100%;padding:11px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px}
+  .settings-btn-export{background:#1a3a5c;color:#fff}
+  .settings-btn-export:active{background:#122840}
+  .settings-btn-import{background:#fff;border:1.5px solid #1a3a5c;color:#1a3a5c}
+  .settings-btn-import:active{background:#f0f4f8}
+  .settings-close{width:100%;margin-top:14px;padding:10px;background:none;border:1.5px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:#888}
+  .settings-status{font-size:12px;border-radius:6px;padding:8px 10px;margin-top:8px;display:none}
+  .settings-status.ok{background:#e1f5ee;color:#0f6e56;display:block}
+  .settings-status.err{background:#fce8e6;color:#c0303a;display:block}
+  body.dark .settings-panel{background:#1e1e1e}
+  body.dark .settings-panel h3{color:#4dd9a0}
+  body.dark .settings-sub{color:#666}
+  body.dark .settings-section{border-color:#2a2a2a}
+  body.dark .settings-section-title{color:#f0f0f0}
+  body.dark .settings-section-desc{color:#777}
+  body.dark .settings-btn-import{border-color:#4dd9a0;color:#4dd9a0}
+  body.dark .settings-close{border-color:#3a3a3a;color:#666}
+  .settings-btn-gear{background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1}
+  .settings-btn-gear:active{background:rgba(255,255,255,.25)}
+
+  .import-excel-btn{width:100%;max-width:380px;padding:14px;background:#fff;border:2px dashed #c0c8d4;border-radius:14px;color:#1a3a5c;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;transition:border-color .15s,background .15s}
+  .import-excel-btn:active{background:#f0f4f8;border-color:#1a3a5c}
+  body.dark .import-excel-btn{background:#1e1e1e;border-color:#3a3a3a;color:#4dd9a0}
+  .home-empty{text-align:center;color:#aaa;font-size:13px;padding:20px 0}
+  body.dark .home-empty{color:#555}
+  .import-confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center}
+  .import-confirm-box{background:#fff;border-radius:16px;padding:26px 22px;max-width:320px;width:90%;text-align:center}
+  .import-confirm-box h3{font-size:16px;font-weight:700;color:#1a3a5c;margin-bottom:8px}
+  .import-confirm-box p{font-size:13px;color:#666;margin-bottom:20px;line-height:1.5}
+  .import-confirm-btns{display:flex;gap:10px}
+  .import-confirm-cancel{flex:1;padding:10px;border:1.5px solid #ddd;border-radius:8px;background:#fff;font-size:13px;cursor:pointer;font-family:inherit;color:#666}
+  .import-confirm-ok{flex:1;padding:10px;border:none;border-radius:8px;background:#1a3a5c;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  body.dark .import-confirm-box{background:#1e1e1e}
+  body.dark .import-confirm-box h3{color:#4dd9a0}
+  body.dark .import-confirm-box p{color:#aaa}
+  body.dark .import-confirm-cancel{background:#2a2a2a;border-color:#3a3a3a;color:#aaa}
+
+  .edit-loc-wrap{margin-bottom:14px}
+  .edit-loc-select{width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;font-family:inherit;color:#1a1a1a;background:#fff;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+  .edit-loc-select:focus{border-color:#1a3a5c}
+  .edit-loc-new{width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;font-family:inherit;color:#1a1a1a;outline:none;text-transform:uppercase;margin-top:8px;display:none}
+  .edit-loc-new:focus{border-color:#1a3a5c}
+  body.dark .edit-loc-select{background-color:#2a2a2a;border-color:#3a3a3a;color:#f0f0f0}
+  body.dark .edit-loc-new{background:#2a2a2a;border-color:#3a3a3a;color:#f0f0f0}
+
+  .filter-btn.dragging{opacity:.5;transform:scale(.93);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+  .filter-btn.drag-over{border-color:#1a3a5c;border-style:dashed;transform:scale(1.05)}
+
+  .btn-create-trip{width:100%;max-width:380px;padding:15px;background:#1a3a5c;border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
+  .btn-create-trip:active{background:#122840}
+  body.dark .btn-create-trip{background:#2a5a8c}
+  .home-empty{text-align:center;color:#aaa;font-size:13px;padding:20px 0}
+  body.dark .home-empty{color:#555}
+  /* Create trip overlay */
+  #create-trip-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:996;align-items:center;justify-content:center}
+  .create-trip-panel{background:#fff;border-radius:16px;padding:24px 20px;max-width:340px;width:90%}
+  .create-trip-panel h3{font-size:16px;font-weight:700;color:#1a3a5c;margin-bottom:16px;display:flex;align-items:center;gap:6px}
+  .create-trip-field{margin-bottom:14px}
+  .create-trip-label{display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:5px}
+  .create-trip-input{width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;font-family:inherit;color:#1a1a1a;outline:none}
+  .create-trip-input:focus{border-color:#1a3a5c}
+  .create-trip-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+  .create-trip-cancel{padding:10px;background:#fff;border:1.5px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:#666}
+  .create-trip-ok{padding:10px;background:#1a3a5c;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:#fff}
+  body.dark .create-trip-panel{background:#1e1e1e}
+  body.dark .create-trip-panel h3{color:#4dd9a0}
+  body.dark .create-trip-label{color:#aaa}
+  body.dark .create-trip-input{background:#2a2a2a;border-color:#3a3a3a;color:#f0f0f0}
+  body.dark .create-trip-cancel{background:#2a2a2a;border-color:#3a3a3a;color:#aaa}
+  /* Per-day Excel import button in top bar */
+  .btn-excel-day{background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1}
+  .btn-excel-day:active{background:rgba(255,255,255,.25)}
+
+  .day-card-wrap{position:relative;width:100%;max-width:380px}
+
+
+  #edit-trip-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:996;align-items:center;justify-content:center}
+  .edit-trip-panel{background:#fff;border-radius:16px;padding:24px 20px;max-width:340px;width:90%}
+  .edit-trip-panel h3{font-size:16px;font-weight:700;color:#1a3a5c;margin-bottom:16px;display:flex;align-items:center;gap:6px}
+  body.dark .edit-trip-panel{background:#1e1e1e}
+  body.dark .edit-trip-panel h3{color:#4dd9a0}
+
+  .home-section-title{font-size:11px;font-weight:700;color:#aaa;letter-spacing:1px;text-transform:uppercase;width:100%;max-width:380px;margin:14px 0 6px;padding:0 4px}
+  body.dark .home-section-title{color:#555}
+  .day-card.archived{opacity:.7;background:#f7f8fa}
+  body.dark .day-card.archived{background:#181818}
+
+  #history-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:998;align-items:flex-end;justify-content:center}
+  .history-panel{background:#fff;border-radius:18px 18px 0 0;width:100%;max-height:80vh;display:flex;flex-direction:column;animation:slideUp .25s ease}
+  .history-header{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 10px;border-bottom:1px solid #f0f0f0}
+  .history-header h3{font-size:15px;font-weight:700;color:#1a1a1a;display:flex;align-items:center;gap:6px}
+  .history-close{background:none;border:none;font-size:22px;color:#aaa;cursor:pointer;padding:0;line-height:1}
+  .history-body{overflow-y:auto;padding:10px 14px 20px;flex:1}
+  .history-empty{text-align:center;padding:30px 0;color:#aaa;font-size:13px}
+  .history-item{background:#f7f8fa;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+  .history-info{flex:1}
+  .history-label{font-size:14px;font-weight:700;color:#1a1a1a}
+  .history-sub{font-size:11px;color:#888;margin-top:2px}
+  .history-actions{display:flex;gap:6px}
+  .btn-restore{padding:6px 10px;background:#1a3a5c;border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn-delete-hist{padding:6px 10px;background:none;border:1.5px solid #e0e0e0;border-radius:7px;color:#c0303a;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn-history-home{background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1}
+  .btn-history-home:active{background:rgba(255,255,255,.25)}
+  body.dark .history-panel{background:#1e1e1e}
+  body.dark .history-header{border-color:#2a2a2a}
+  body.dark .history-header h3{color:#f0f0f0}
+  body.dark .history-item{background:#2a2a2a}
+  body.dark .history-label{color:#f0f0f0}
+  body.dark .btn-delete-hist{border-color:#3a3a3a}
+
+  .btn-reorg{background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:20px;cursor:pointer;line-height:1;font-weight:700}
+  .btn-reorg:active{background:rgba(255,255,255,.25)}
+  .btn-reorg.active{background:#f4a12b;color:#fff}
+  .seat.reorg-origin{border:2.5px solid #f4a12b!important;background:#fff3e0!important;transform:scale(1.05)}
+  .seat.reorg-target{border:2.5px dashed #f4a12b!important;background:#fff8f0!important}
+  body.dark .seat.reorg-origin{background:#3d2a00!important}
+  body.dark .seat.reorg-target{background:#2a1e00!important}
+  .reorg-banner{background:#f4a12b;color:#fff;font-size:12px;font-weight:600;text-align:center;padding:6px 14px;display:none}
+
+
+
+  #pdf-pick-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:997;align-items:center;justify-content:center}
+  .pdf-pick-panel{background:#fff;border-radius:16px;padding:24px 20px;max-width:320px;width:90%;text-align:center}
+  .pdf-pick-panel h3{font-size:15px;font-weight:700;color:#1a3a5c;margin-bottom:6px}
+  .pdf-pick-sub{font-size:12px;color:#888;margin-bottom:18px}
+  .pdf-pick-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pdf-pick-btn{padding:14px 8px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .pdf-pick-btn span{font-size:24px}
+  .pdf-pick-btn small{font-size:10px;font-weight:400;opacity:.8}
+  .pdf-pick-list{background:#1a3a5c;color:#fff}
+  .pdf-pick-map{background:#0f6e56;color:#fff}
+  .pdf-pick-cancel{width:100%;margin-top:12px;padding:9px;background:none;border:1.5px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:#888}
+  body.dark .pdf-pick-panel{background:#1e1e1e}
+  body.dark .pdf-pick-panel h3{color:#4dd9a0}
+  body.dark .pdf-pick-cancel{border-color:#3a3a3a;color:#666}
+
+  /* Map PDF styles */
+  #pdf-map-report{display:none;font-family:Arial,sans-serif;padding:16px;color:#111}
+  #pdf-map-report h1{font-size:16px;margin-bottom:2px}
+  #pdf-map-report .rdate{font-size:11px;color:#666;margin-bottom:6px}
+  #pdf-map-report .summary{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  #pdf-map-report .sum-item{background:#f5f5f5;border-radius:5px;padding:5px 10px;text-align:center}
+  #pdf-map-report .sum-n{font-size:18px;font-weight:700}
+  #pdf-map-report .sum-n.ok{color:#1a8a52}
+  #pdf-map-report .sum-n.falt{color:#c0303a}
+  #pdf-map-report .sum-l{font-size:10px;color:#666}
+  .bus-map-grid{display:grid;grid-template-columns:1fr 1fr 12px 1fr 1fr;gap:3px;margin-top:8px}
+  .bus-map-seat{border:1px solid #ddd;border-radius:5px;padding:4px 5px;font-size:9px;min-height:44px;display:flex;flex-direction:column;justify-content:flex-start}
+  .bus-map-seat.emb{background:#d4f5e7;border-color:#34c97e}
+  .bus-map-seat.empty{background:#f5f5f5;border-color:#e0e0e0}
+  .bus-map-seat .s-num{font-size:8px;font-weight:700;color:#aaa;margin-bottom:1px}
+  .bus-map-seat .s-name{font-size:9px;font-weight:700;color:#111;line-height:1.2}
+  .bus-map-seat.emb .s-name{color:#0f6e56}
+  .bus-map-seat .s-loc{font-size:8px;color:#888;margin-top:1px}
+  .bus-map-corridor{display:flex;align-items:center;justify-content:center;font-size:8px;color:#ddd}
+  @media print{
+    #pdf-map-report{display:block!important}
+    #pdf-report,#home-screen,#app-screen{display:none!important}
+  }
+
+  .edit-trip-danger{border-top:1px solid #f0f0f0;margin-top:14px;padding-top:12px;display:flex;flex-direction:column;gap:8px}
+  .btn-trip-archive{width:100%;padding:10px;background:#fff8f0;border:1.5px solid #f4a12b;border-radius:8px;color:#f4a12b;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn-trip-archive:active{background:#f4a12b;color:#fff}
+  .btn-trip-delete{width:100%;padding:10px;background:#fff0f0;border:1.5px solid #c0303a;border-radius:8px;color:#c0303a;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn-trip-delete:active{background:#c0303a;color:#fff}
+  body.dark .btn-trip-archive{background:#2a1e00;border-color:#f4a12b;color:#f4a12b}
+  body.dark .btn-trip-delete{background:#2a0a0a;border-color:#c0303a;color:#e05555}
+  body.dark .edit-trip-danger{border-color:#2a2a2a}
+</style>
+
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1976d2">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+
+</head>
+<body>
+
+<!-- TELA INICIAL -->
+<div id="home-screen">
+  <button class="home-settings-btn" onclick="openSettings()" id="home-settings-btn">⚙️</button>
+  <button class="home-settings-btn" style="right:60px;left:auto" onclick="openHistory()">📂</button>
+  <button class="home-dark-btn" onclick="toggleDark()" id="home-dark-btn">🌙</button>
+  <div class="home-icon">🚌</div>
+  <div class="home-title">Controle de Embarque</div>
+  <div class="home-sub">Selecione o dia da viagem</div>
+  <div class="day-cards" id="day-cards"></div>
+  <div class="home-empty" id="home-empty" style="display:none">Nenhuma viagem criada ainda.</div>
+  <button class="btn-create-trip" onclick="openCreateTrip()">+ Criar Viagem</button>
+</div>
+
+<!-- APP SCREEN -->
+<div id="app-screen">
+  <div class="top-bar">
+    <div class="top-bar-row1">
+      <div class="top-title" id="top-title"></div>
+      <button class="btn-excel-day" onclick="document.getElementById('day-excel-input').click()" title="Importar Excel para esta viagem">📊</button>
+      <button class="btn-reorg" id="btn-reorg" onclick="toggleReorg()" title="Reorganizar poltronas">⇄</button>
+      <input type="file" id="day-excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleDayExcelImport(event)">
+      <button class="dark-btn" onclick="toggleDark()" id="top-dark-btn">🌙</button>
+    </div>
+    <div class="stats" id="stats-row">
+      <div class="stat"><div class="stat-n" id="s-tot">46</div><div class="stat-l">Poltronas</div></div>
+      <div class="stat"><div class="stat-n emb" id="s-emb">0</div><div class="stat-l">Embarcados</div></div>
+      <div class="stat"><div class="stat-n falt" id="s-falt">46</div><div class="stat-l">Faltando</div></div>
+      <div class="stat" id="colo-stat" style="display:none"><div class="stat-n colo" id="s-colo">0</div><div class="stat-l">No colo</div></div>
+    </div>
+    <div class="stat-l" id="s-pessoas-wrap" style="text-align:center;opacity:.85;margin-bottom:8px;display:none">👥 Total de pessoas no ônibus: <strong id="s-pessoas">46</strong></div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Progresso do embarque</span><span id="p-pct">0%</span></div>
+      <div class="progress-track"><div class="progress-bar" id="p-bar"></div></div>
+    </div>
+    <div class="search-row">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+      <input type="search" id="srch" placeholder="Localizar passageiro..." oninput="doSearch(this.value)">
+      <button class="clear" id="clr" onclick="clearSearch()">×</button>
+    </div>
+  </div>
+
+  <div class="search-result" id="sr"></div>
+  <div class="reorg-banner" id="reorg-banner">🔀 Toque na poltrona de ORIGEM</div>
+  <div class="filter-wrap" id="filter-wrap"></div>
+
+  <div class="bus-wrap">
+    <div class="bus-card">
+      <div class="bus-front">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/></svg>
+        <span>MOTORISTA / FRENTE DO VEÍCULO</span>
+      </div>
+      <div id="seat-map"></div>
+      <div class="footer">
+        <div class="leg"><div class="leg-sq ok"></div>Embarcado</div>
+        <div class="leg"><div class="leg-sq pend"></div>Aguardando</div>
+      </div>
+      <button class="reset-btn" onclick="resetAll()">↺ Resetar embarque</button>
+      <div class="obs-wrap">
+        <label class="obs-label" for="obs-field">📝 Observações</label>
+        <textarea id="obs-field" class="obs-field" placeholder="Anote aqui passageiros faltando, ocorrências, recados..." oninput="saveObs()"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-btns">
+    <button class="btn-pdf" onclick="openPdfPick()">📄 PDF</button>
+    <button class="btn-falt" onclick="showFaltosos()">📋 Faltosos</button>
+    <button class="btn-wpp" onclick="shareWhatsApp()">📲 WhatsApp</button>
+    <button class="btn-back" onclick="goHome()">← Voltar</button>
+  </div>
+</div>
+
+<!-- Faltosos -->
+<div id="falt-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:998;align-items:flex-end;justify-content:center">
+  <div class="falt-panel">
+    <div class="falt-header">
+      <h3>❌ Faltosos <span id="falt-count-badge" style="background:#f4a12b;color:#fff;border-radius:10px;padding:2px 8px;font-size:12px;margin-left:4px">0</span></h3>
+      <button class="falt-close" onclick="document.getElementById('falt-overlay').style.display='none'">×</button>
+    </div>
+    <div class="falt-body" id="falt-body"></div>
+  </div>
+</div>
+
+<!-- Edit -->
+<div id="edit-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:997;align-items:center;justify-content:center">
+  <div class="edit-panel">
+    <h3 id="edit-title">✏️ Editar Poltrona 00</h3>
+    <div class="edit-sub">Segure para editar • Nome em maiúsculo</div>
+    <input type="text" id="edit-input" placeholder="NOME DO PASSAGEIRO" oninput="this.value=this.value.toUpperCase()">
+    <label style="display:block;font-size:11px;color:#888;margin:-8px 0 5px">👶 Criança de colo (opcional)</label>
+    <input type="text" id="edit-colo-input" placeholder="NOME DA CRIANÇA" oninput="this.value=this.value.toUpperCase()" style="margin-bottom:14px">
+    <label style="display:block;font-size:11px;color:#888;margin:-8px 0 5px">📍 Localidade</label>
+    <div class="edit-loc-wrap">
+      <select id="edit-loc-select" class="edit-loc-select" onchange="onLocSelectChange(this.value)"></select>
+      <input type="text" id="edit-loc-new" class="edit-loc-new" placeholder="NOVA LOCALIDADE" oninput="this.value=this.value.toUpperCase()">
+    </div>
+    <div class="edit-actions">
+      <button class="edit-cancel" onclick="closeEdit()">Cancelar</button>
+      <button class="edit-save" onclick="saveEdit()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Alert completo -->
+<div id="alert-completo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center">
+  <div class="alert-box">
+    <div class="alert-icon">🎉</div>
+    <div class="alert-title">Ônibus Completo!</div>
+    <div class="alert-sub" id="alert-sub">Todos os passageiros embarcaram.<br>Boa viagem! 🚌</div>
+    <button class="alert-ok" onclick="document.getElementById('alert-completo').style.display='none'">Fechar</button>
+  </div>
+</div>
+
+<!-- Import Excel Confirm -->
+<div class="import-confirm-overlay" id="import-confirm-overlay">
+  <div class="import-confirm-box">
+    <h3>⚠️ Substituir dados?</h3>
+    <p>Você tem progresso salvo (embarques, edições, observações). Importar um novo Excel vai apagar tudo isso.<br><br>Deseja continuar?</p>
+    <div class="import-confirm-btns">
+      <button class="import-confirm-cancel" onclick="cancelExcelImport()">Cancelar</button>
+      <button class="import-confirm-ok" onclick="confirmExcelImport()">Substituir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Trip -->
+<div id="create-trip-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:996;align-items:center;justify-content:center">
+  <div class="create-trip-panel">
+    <h3>🚌 Criar Nova Viagem</h3>
+    <div class="create-trip-field">
+      <label class="create-trip-label" for="trip-title">📝 Título da viagem</label>
+      <input type="text" id="trip-title" class="create-trip-input" placeholder="Ex: Excursão Ilha Grande">
+    </div>
+    <div class="create-trip-field">
+      <label class="create-trip-label" for="trip-date">📅 Data da viagem</label>
+      <input type="date" id="trip-date" class="create-trip-input">
+    </div>
+    <div class="create-trip-field">
+      <label class="create-trip-label" for="trip-seats">💺 Quantidade de poltronas</label>
+      <input type="number" id="trip-seats" class="create-trip-input" min="1" max="500" placeholder="Ex: 46">
+    </div>
+    <div class="create-trip-actions">
+      <button class="create-trip-cancel" onclick="closeCreateTrip()">Cancelar</button>
+      <button class="create-trip-ok" onclick="confirmCreateTrip()">Criar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Trip -->
+<div id="edit-trip-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:996;align-items:center;justify-content:center">
+  <div class="edit-trip-panel">
+    <h3>✏️ Editar Viagem</h3>
+    <div class="create-trip-field">
+      <label class="create-trip-label" for="edit-trip-title">📝 Título da viagem</label>
+      <input type="text" id="edit-trip-title" class="create-trip-input" placeholder="Ex: Excursão Ilha Grande">
+    </div>
+    <div class="create-trip-field">
+      <label class="create-trip-label" for="edit-trip-date">📅 Data da viagem</label>
+      <input type="date" id="edit-trip-date" class="create-trip-input">
+    </div>
+    <div class="create-trip-field">
+      <label class="create-trip-label" for="edit-trip-seats">💺 Quantidade de poltronas</label>
+      <input type="number" id="edit-trip-seats" class="create-trip-input" min="1" max="500" placeholder="Ex: 46">
+    </div>
+    <div class="create-trip-actions">
+      <button class="create-trip-cancel" onclick="closeEditTrip()">Cancelar</button>
+      <button class="create-trip-ok" onclick="confirmEditTrip()">Salvar</button>
+    </div>
+    <div class="edit-trip-danger">
+      <button class="btn-trip-archive" onclick="const idx=editingTripIndex;closeEditTrip();archiveTrip(idx)">📦 Arquivar viagem</button>
+      <button class="btn-trip-delete" onclick="const idx=editingTripIndex;closeEditTrip();deleteTrip(idx)">🗑️ Excluir viagem</button>
+    </div>
+  </div>
+</div>
+
+<!-- History -->
+<div id="history-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:998;align-items:flex-end;justify-content:center">
+  <div class="history-panel">
+    <div class="history-header">
+      <h3>📂 Histórico de Viagens</h3>
+      <button class="history-close" onclick="closeHistory()">×</button>
+    </div>
+    <div class="history-body" id="history-body"></div>
+  </div>
+</div>
+
+<!-- Settings / Backup -->
+<div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:996;align-items:center;justify-content:center">
+  <div class="settings-panel">
+    <h3>⚙️ Configurações</h3>
+    <div class="settings-sub">Backup do progresso de embarque</div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">📤 Exportar Backup</div>
+      <div class="settings-section-desc">Salva um arquivo com tudo que foi feito até agora (embarques marcados, horários, nomes editados, crianças de colo e observações de todos os dias). Envie esse arquivo para outra pessoa ou guarde para você mesmo.</div>
+      <button class="settings-btn settings-btn-export" onclick="exportBackup()">📤 Exportar Backup</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">📥 Restaurar Backup</div>
+      <div class="settings-section-desc">Carrega um arquivo de backup exportado anteriormente. Isso substitui os dados atuais deste navegador pelos dados do arquivo.</div>
+      <input type="file" id="backup-file-input" accept=".json" style="display:none" onchange="importBackup(event)">
+      <button class="settings-btn settings-btn-import" onclick="document.getElementById('backup-file-input').click()">📥 Selecionar Arquivo de Backup</button>
+    </div>
+
+    <div class="settings-status" id="settings-status"></div>
+
+    <button class="settings-close" onclick="closeSettings()">Fechar</button>
+  </div>
+</div>
+
+<!-- PDF Picker -->
+<div id="pdf-pick-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:997;align-items:center;justify-content:center">
+  <div class="pdf-pick-panel">
+    <h3>📄 Exportar PDF</h3>
+    <div class="pdf-pick-sub">Escolha o formato do relatório</div>
+    <div class="pdf-pick-btns">
+      <button class="pdf-pick-btn pdf-pick-list" onclick="closePdfPick();exportPDF()">
+        <span>📋</span>Lista
+        <small>Com horários e detalhes</small>
+      </button>
+      <button class="pdf-pick-btn pdf-pick-map" onclick="closePdfPick();exportMapPDF()">
+        <span>🗺️</span>Mapa
+        <small>Visual do ônibus</small>
+      </button>
+    </div>
+    <button class="pdf-pick-cancel" onclick="closePdfPick()">Cancelar</button>
+  </div>
+</div>
+
+<div id="pdf-map-report"></div>
+
+<div id="pdf-report"></div>
+
+<script>
+let DAYS = [];
+let HISTORY = [];
+
+// layout is generated dynamically in buildMap based on actual passengers
+
+let currentDay=null; // index into DAYS
+let P={}, chk={}, hor={};
+let activeFilter='TODOS';
+let editingSeat=null;
+
+// ===== HOME SCREEN =====
+function renderHome(){
+  document.getElementById('home-screen').style.display='flex';
+  document.getElementById('app-screen').style.display='none';
+  const container=document.getElementById('day-cards');
+  container.innerHTML='';
+  const emptyEl=document.getElementById('home-empty');
+  if(!DAYS||DAYS.length===0){emptyEl.style.display='block';return;}
+  emptyEl.style.display='none';
+  DAYS.forEach((day,i)=>{
+    const state=loadDayState(i);
+    const emb=Object.values(state.chk).filter(Boolean).length;
+    const total=Object.keys(day.passengers).length;
+    const pct=total>0?Math.round(emb/total*100):0;
+    const icons=['📅🚌','📅🚌','📅🚌'];
+    const wrap=document.createElement('div');
+    wrap.className='day-card-wrap';
+
+    const card=document.createElement('div');
+    card.className='day-card';
+    card.innerHTML=`
+      <div class="day-card-icon">🚌</div>
+      <div class="day-card-info" style="flex:1;min-width:0">
+        ${day.title?`<div class="day-card-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${day.title}</div>`:''}
+        <div class="day-card-sub${day.title?'':' day-card-label'}">${day.label} · ${total} passageiros</div>
+        <div class="day-card-prog"><div class="day-card-bar" style="width:${pct}%"></div></div>
+        <div class="day-card-pct">${emb} embarcados (${pct}%)</div>
+
+      </div>
+      <div class="day-card-arrow">›</div>`;
+    card.onclick=()=>openDay(i);
+
+    // Long press to edit
+    let cardPressTimer=null, cardMoved=false;
+    wrap.addEventListener('touchstart',()=>{ cardMoved=false; cardPressTimer=setTimeout(()=>{ cardPressTimer=null; openEditTrip(i); },800); },{passive:true});
+    wrap.addEventListener('touchmove',()=>{ cardMoved=true; if(cardPressTimer){clearTimeout(cardPressTimer);cardPressTimer=null;} },{passive:true});
+    wrap.addEventListener('touchend',()=>{ if(cardPressTimer){clearTimeout(cardPressTimer);cardPressTimer=null;} },{passive:true});
+
+    wrap.appendChild(card);
+    container.appendChild(wrap);
+  });
+}
+
+function goHome(){
+  document.getElementById('home-screen').style.display='flex';
+  document.getElementById('app-screen').style.display='none';
+  currentDay=null;
+  try{ localStorage.removeItem('current_day'); }catch(e){}
+  reorgMode=false; reorgOrigin=null;
+  renderHome();
+}
+
+// ===== OPEN DAY =====
+function openDay(i){
+  currentDay=i;
+  try{ localStorage.setItem('current_day', i); }catch(e){}
+  const day=DAYS[i];
+  // Deep copy passengers so edits don't affect original
+  P={};
+  for(let n in day.passengers){
+    P[n]={n:day.passengers[n].n, l:day.passengers[n].l};
+    if(day.passengers[n].c) P[n].c=day.passengers[n].c;
+  }
+  chk={}; hor={};
+  activeFilter='TODOS';
+  reorderMode=false;
+
+  // Load saved state
+  loadState();
+
+  document.getElementById('top-title').textContent=day.label;
+  document.getElementById('home-screen').style.display='none';
+  document.getElementById('app-screen').style.display='block';
+
+  // Build filter buttons dynamically
+  buildFilters(day.locs);
+  buildMap();
+  updateStats();
+  loadObs();
+}
+
+let reorderMode=false;
+let dragSrc=null;
+
+function locLabel(loc){
+  return loc==='NOVO HORIZONTE'?'N. Horizonte':loc.charAt(0)+loc.slice(1).toLowerCase();
+}
+
+function buildFilters(locs){
+  const wrap=document.getElementById('filter-wrap');
+  wrap.innerHTML='';
+
+  // "Todos" — always fixed
+  const allBtn=document.createElement('button');
+  allBtn.className='filter-btn'+(activeFilter==='TODOS'?' active':'');
+  allBtn.dataset.loc='TODOS';
+  allBtn.textContent='🗺 Todos';
+  allBtn.onclick=()=>setFilter('TODOS');
+  wrap.appendChild(allBtn);
+
+  locs.forEach(loc=>{
+    const btn=document.createElement('button');
+    btn.className='filter-btn'+(activeFilter===loc?' active':'');
+    btn.dataset.loc=loc;
+    btn.textContent='📍 '+locLabel(loc);
+    btn.draggable=false; // desktop drag disabled — touch only
+
+    // Normal tap to filter
+    btn.onclick=()=>setFilter(loc);
+
+    // ---- TOUCH DRAG (long press 800ms then drag) ----
+    let holdTimer=null, isDragging=false, clone=null, moved=false;
+
+    btn.addEventListener('touchstart', e=>{
+      moved=false;
+      holdTimer=setTimeout(()=>{
+        isDragging=true;
+        dragSrc=btn;
+        btn.classList.add('dragging');
+        // Create floating clone
+        const r=btn.getBoundingClientRect();
+        clone=btn.cloneNode(true);
+        clone.style.cssText=`position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;opacity:.85;pointer-events:none;z-index:9999;transform:scale(1.08);transition:none;border-radius:20px;padding:6px 12px;background:#1a3a5c;color:#fff;border:1.5px solid #1a3a5c;font-size:12px;font-weight:600;font-family:inherit;`;
+        document.body.appendChild(clone);
+        if(navigator.vibrate) navigator.vibrate(60);
+      }, 800);
+    },{passive:true});
+
+    btn.addEventListener('touchmove', e=>{
+      moved=true;
+      if(!isDragging){ clearTimeout(holdTimer); return; }
+      e.preventDefault();
+      const t=e.touches[0];
+      if(clone){
+        clone.style.left=(t.clientX - clone.offsetWidth/2)+'px';
+        clone.style.top=(t.clientY - clone.offsetHeight/2)+'px';
+      }
+      // Highlight target
+      document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('drag-over'));
+      const cloneDisplay=clone?clone.style.display:'';
+      if(clone) clone.style.display='none';
+      const el=document.elementFromPoint(t.clientX, t.clientY);
+      if(clone) clone.style.display=cloneDisplay;
+      if(el && el.classList.contains('filter-btn') && el!==btn && el.dataset.loc!=='TODOS'){
+        el.classList.add('drag-over');
+      }
+    },{passive:false});
+
+    btn.addEventListener('touchend', e=>{
+      clearTimeout(holdTimer);
+      if(clone){ document.body.removeChild(clone); clone=null; }
+      btn.classList.remove('dragging');
+      document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('drag-over'));
+      if(!isDragging){ isDragging=false; dragSrc=null; return; }
+      isDragging=false;
+      const t=e.changedTouches[0];
+      // Find drop target
+      if(clone) clone.style.display='none';
+      const el=document.elementFromPoint(t.clientX, t.clientY);
+      if(el && el.classList.contains('filter-btn') && el!==btn && el.dataset.loc!=='TODOS'){
+        const fromLoc=btn.dataset.loc;
+        const toLoc=el.dataset.loc;
+        const arr=DAYS[currentDay].locs;
+        const fi=arr.indexOf(fromLoc), ti=arr.indexOf(toLoc);
+        if(fi>-1 && ti>-1){ arr.splice(fi,1); arr.splice(ti,0,fromLoc); }
+        saveLocsOrder();
+      }
+      dragSrc=null;
+      buildFilters(DAYS[currentDay].locs);
+    },{passive:true});
+
+    btn.addEventListener('touchcancel', ()=>{
+      clearTimeout(holdTimer);
+      if(clone){ document.body.removeChild(clone); clone=null; }
+      btn.classList.remove('dragging');
+      document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('drag-over'));
+      isDragging=false; dragSrc=null;
+    },{passive:true});
+
+    wrap.appendChild(btn);
+  });
+}
+
+function toggleReorder(){ /* no-op, kept for safety */ }
+
+function saveLocsOrder(){
+  try{ localStorage.setItem('days_structure',JSON.stringify(DAYS)); }catch(e){}
+}
+
+// ===== STORAGE (per day) =====
+function dayKey(suffix){ return 'day'+currentDay+'_'+suffix; }
+
+function saveState(){
+  try{
+    localStorage.setItem(dayKey('chk'),JSON.stringify(chk));
+    localStorage.setItem(dayKey('hor'),JSON.stringify(hor));
+    const names={};
+    const colos={};
+    const locs={};
+    for(let n in P){
+      names[n]=P[n].n;
+      if(P[n].c) colos[n]=P[n].c;
+      if(P[n].l) locs[n]=P[n].l;
+    }
+    localStorage.setItem(dayKey('names'),JSON.stringify(names));
+    localStorage.setItem(dayKey('colos'),JSON.stringify(colos));
+    localStorage.setItem(dayKey('locs'),JSON.stringify(locs));
+  }catch(e){}
+}
+
+function loadState(){
+  try{
+    const d=localStorage.getItem(dayKey('chk'));
+    if(d){const o=JSON.parse(d);Object.assign(chk,o);}
+    const h=localStorage.getItem(dayKey('hor'));
+    if(h){const o=JSON.parse(h);Object.assign(hor,o);}
+    const nm=localStorage.getItem(dayKey('names'));
+    if(nm){const o=JSON.parse(nm);for(let n in o) if(P[n]) P[n].n=o[n];}
+    const cl=localStorage.getItem(dayKey('colos'));
+    if(cl){
+      const o=JSON.parse(cl);
+      for(let n in P) delete P[n].c;
+      for(let n in o) if(P[n]) P[n].c=o[n];
+    }
+    const ls=localStorage.getItem(dayKey('locs'));
+    if(ls){const o=JSON.parse(ls);for(let n in o) if(P[n]) P[n].l=o[n];}
+  }catch(e){}
+}
+
+function loadDayState(i){
+  try{
+    const d=localStorage.getItem('day'+i+'_chk');
+    return {chk: d?JSON.parse(d):{}};
+  }catch(e){ return {chk:{}}; }
+}
+
+function saveObs(){
+  try{localStorage.setItem(dayKey('obs'),document.getElementById('obs-field').value);}catch(e){}
+}
+function loadObs(){
+  try{
+    const v=localStorage.getItem(dayKey('obs'));
+    document.getElementById('obs-field').value=v||'';
+  }catch(e){}
+}
+
+// ===== SEAT MAP =====
+function shortName(full){
+  const skip=new Set(['DE','DA','DO','DOS','DAS','E']);
+  const parts=full.trim().split(' ').filter(w=>!skip.has(w.toUpperCase()));
+  return parts.length>=2 ? parts[0]+' '+parts[1] : parts[0];
+}
+
+function buildMap(){
+  const map=document.getElementById('seat-map');
+  map.innerHTML='';
+  // Generate layout dynamically from actual passenger numbers
+  const seatNums = Object.keys(P).map(Number).sort((a,b)=>a-b);
+  const layout = [];
+  for(let i=0; i<seatNums.length; i+=2){
+    if(i+1 < seatNums.length) layout.push([seatNums[i], seatNums[i+1]]);
+    else layout.push([seatNums[i]]); // odd seat alone
+  }
+  layout.forEach((pair)=>{
+    const [a, b] = pair;
+    const row=document.createElement('div');
+    row.className='row';
+    const seatsInRow = b !== undefined ? [a,b] : [a];
+    seatsInRow.forEach((n,side)=>{
+      const seat=document.createElement('div');
+      seat.className='seat';
+      seat.id='s'+n;
+      const isWin=(n%2!==0);
+      const hasColo=!!P[n].c;
+      seat.innerHTML=
+        '<span class="num">'+String(n).padStart(2,'0')+(hasColo?' <span title="Criança de colo">👶</span>':'')+'</span>'+
+        '<span class="name">'+shortName(P[n].n)+'</span>'+
+        (hasColo?'<span class="colo-tag">+ '+shortName(P[n].c)+'</span>':'')+
+        '<span class="chk">✓</span>'+
+        (isWin?'<span class="win-dot"></span>':'');
+      seat.querySelector('.chk').style.display='none';
+      if(chk[n]){seat.classList.add('checked');seat.querySelector('.chk').style.display='block';}
+
+      // Touch: tap = toggle, long press = edit
+      let pressTimer=null, moved=false;
+      seat.addEventListener('touchstart',()=>{
+        moved=false;
+        pressTimer=setTimeout(()=>{ pressTimer=null; openEdit(n); },700);
+      },{passive:true});
+      seat.addEventListener('touchmove',()=>{
+        moved=true;
+        if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
+      },{passive:true});
+      seat.addEventListener('touchend',(e)=>{
+        if(pressTimer){clearTimeout(pressTimer);pressTimer=null;if(!moved)toggleSeat(n);}
+        moved=false;
+      },{passive:true});
+      seat.addEventListener('contextmenu',(e)=>{e.preventDefault();openEdit(n);});
+      seat.addEventListener('click',(e)=>{if(e.pointerType==='touch')return;toggleSeat(n);});
+
+      row.appendChild(seat);
+      if(side===0 && seatsInRow.length===2){
+        const c=document.createElement('div');
+        c.className='corridor';c.textContent='·';
+        row.appendChild(c);
+      }
+    });
+    map.appendChild(row);
+  });
+}
+
+// ===== REORGANIZE =====
+let reorgMode = false;
+let reorgOrigin = null;
+
+function toggleReorg(){
+  reorgMode = !reorgMode;
+  reorgOrigin = null;
+  const btn = document.getElementById('btn-reorg');
+  const banner = document.getElementById('reorg-banner');
+  if(reorgMode){
+    btn.classList.add('active');
+    banner.style.display = 'block';
+    banner.textContent = '⇄ Toque na poltrona de ORIGEM';
+  } else {
+    btn.classList.remove('active');
+    banner.style.display = 'none';
+    document.querySelectorAll('.seat').forEach(s=>{
+      s.classList.remove('reorg-origin','reorg-target');
+    });
+  }
+}
+
+function handleReorgTap(n){
+  if(!reorgMode) return false;
+  const banner = document.getElementById('reorg-banner');
+  if(reorgOrigin === null){
+    // Select origin
+    reorgOrigin = n;
+    document.querySelectorAll('.seat').forEach(s=>s.classList.remove('reorg-origin','reorg-target'));
+    document.getElementById('s'+n).classList.add('reorg-origin');
+    // Highlight all other seats as potential targets
+    for(let k in P){
+      if(Number(k)!==n) document.getElementById('s'+k)?.classList.add('reorg-target');
+    }
+    banner.textContent = `⇄ Origem: Poltrona ${String(n).padStart(2,'0')} (${shortName(P[n].n)}) — Toque no DESTINO`;
+  } else if(reorgOrigin === n){
+    // Tapped origin again — cancel selection
+    reorgOrigin = null;
+    document.querySelectorAll('.seat').forEach(s=>s.classList.remove('reorg-origin','reorg-target'));
+    banner.textContent = '⇄ Toque na poltrona de ORIGEM';
+  } else {
+    // Swap the two seats
+    const a = reorgOrigin, b = n;
+    // Swap passenger data
+    const tmpP = {...P[a]};
+    P[a] = {...P[b]};
+    P[b] = tmpP;
+    // Swap chk
+    const tmpChk = !!chk[a];
+    chk[a] = !!chk[b];
+    chk[b] = tmpChk;
+    // Swap hor
+    const tmpHor = hor[a];
+    hor[a] = hor[b] !== undefined ? hor[b] : undefined;
+    hor[b] = tmpHor !== undefined ? tmpHor : undefined;
+    if(!hor[a]) delete hor[a];
+    if(!hor[b]) delete hor[b];
+    // Reset
+    reorgOrigin = null;
+    saveState();
+    buildMap();
+    if(activeFilter!=='TODOS') setFilter(activeFilter);
+    updateStats();
+    // Keep reorg mode active for more swaps
+    banner.textContent = '⇄ Troca feita! Toque na próxima ORIGEM ou ⇄ para sair';
+    setTimeout(()=>{ if(reorgMode) banner.textContent='⇄ Toque na poltrona de ORIGEM'; },2000);
+  }
+  return true;
+}
+
+// ===== TOGGLE =====
+function toggleSeat(n){
+  if(handleReorgTap(n)) return;
+  chk[n]=!chk[n];
+  const el=document.getElementById('s'+n);
+  if(!el)return;
+  el.classList.toggle('checked',!!chk[n]);
+  el.querySelector('.chk').style.display=chk[n]?'block':'none';
+  if(chk[n]){
+    const now=new Date();
+    hor[n]=now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  } else { delete hor[n]; }
+  updateStats();
+  saveState();
+}
+
+// ===== STATS =====
+function updateStats(){
+  let total=0,emb=0,coloTotal=0,coloEmb=0;
+  for(let n in P){
+    const num=Number(n);
+    if(activeFilter==='TODOS'||P[num].l===activeFilter){
+      total++;
+      if(chk[num])emb++;
+      if(P[num].c){
+        coloTotal++;
+        if(chk[num])coloEmb++;
+      }
+    }
+  }
+  document.getElementById('s-tot').textContent=total;
+  document.getElementById('s-emb').textContent=emb;
+  document.getElementById('s-falt').textContent=total-emb;
+
+  const coloStatEl=document.getElementById('colo-stat');
+  const pessoasWrap=document.getElementById('s-pessoas-wrap');
+  if(coloTotal>0){
+    coloStatEl.style.display='block';
+    document.getElementById('stats-row').classList.add('with-colo');
+    document.getElementById('s-colo').textContent=coloEmb+'/'+coloTotal;
+    pessoasWrap.style.display='block';
+    document.getElementById('s-pessoas').textContent=(total+coloTotal);
+  } else {
+    coloStatEl.style.display='none';
+    document.getElementById('stats-row').classList.remove('with-colo');
+    pessoasWrap.style.display='none';
+  }
+
+  const pct=total>0?Math.round(emb/total*100):0;
+  const bar=document.getElementById('p-bar');
+  bar.style.width=pct+'%';
+  document.getElementById('p-pct').textContent=pct+'%';
+  if(pct===100) bar.style.background='linear-gradient(90deg,#2ab87a,#1a8a52)';
+  else if(pct>=50) bar.style.background='linear-gradient(90deg,#4dd9a0,#2ab87a)';
+  else bar.style.background='linear-gradient(90deg,#f4c56b,#f4a12b)';
+  if(pct===100){
+    const totalGeral=Object.keys(P).length;
+    const embGeral=Object.values(chk).filter(Boolean).length;
+    if(embGeral===totalGeral) showAlertCompleto();
+  }
+}
+
+// ===== FILTER =====
+function setFilter(loc){
+  activeFilter=loc;
+  document.querySelectorAll('.filter-btn').forEach(b=>{
+    b.classList.toggle('active',b.dataset.loc===loc);
+  });
+  document.querySelectorAll('.row').forEach(row=>{
+    const seats=row.querySelectorAll('.seat');
+    let anyVisible=false;
+    seats.forEach(s=>{
+      const num=parseInt(s.id.replace('s',''));
+      const show=(loc==='TODOS'||P[num].l===loc);
+      s.classList.toggle('hidden',!show);
+      if(show)anyVisible=true;
+    });
+    row.classList.toggle('all-hidden',!anyVisible);
+  });
+  updateStats();
+}
+
+// ===== SEARCH =====
+function normalize(str){
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+}
+
+function doSearch(val){
+  document.querySelectorAll('.seat').forEach(s=>s.classList.remove('hl'));
+  const sr=document.getElementById('sr');
+  document.getElementById('clr').style.display=val?'block':'none';
+  if(!val.trim()){sr.style.display='none';return;}
+  const q=normalize(val.trim());
+  let found=[];
+  for(let n in P){
+    const matchNome=normalize(P[n].n).includes(q);
+    const matchColo=P[n].c && normalize(P[n].c).includes(q);
+    if(matchNome||matchColo) found.push({num:Number(n), viaColo:!matchNome&&matchColo});
+  }
+  if(!found.length){sr.style.display='block';sr.textContent='Passageiro não encontrado.';return;}
+  found.forEach(f=>{
+    const el=document.getElementById('s'+f.num);
+    if(el){el.classList.add('hl');el.scrollIntoView({behavior:'smooth',block:'center'});}
+  });
+  sr.style.display='block';
+  sr.textContent=found.map(f=>{
+    const base='Assento '+String(f.num).padStart(2,'0')+': '+P[f.num].n;
+    return f.viaColo ? base+' (👶 '+P[f.num].c+')' : base;
+  }).join(' · ');
+}
+function clearSearch(){
+  document.getElementById('srch').value='';
+  document.getElementById('clr').style.display='none';
+  document.getElementById('sr').style.display='none';
+  document.querySelectorAll('.seat').forEach(s=>s.classList.remove('hl'));
+}
+
+// ===== RESET =====
+function resetAll(){
+  if(!confirm('Resetar todos os embarques deste dia?'))return;
+  for(let k in chk)chk[k]=false;
+  for(let k in hor)delete hor[k];
+  document.querySelectorAll('.seat').forEach(s=>{
+    s.classList.remove('checked');
+    const c=s.querySelector('.chk');
+    if(c)c.style.display='none';
+  });
+  updateStats();
+  saveState();
+}
+
+// ===== ALERT COMPLETO =====
+function showAlertCompleto(){
+  const total=Object.keys(P).length;
+  document.getElementById('alert-sub').innerHTML='Todos os <strong>'+total+' passageiros</strong> embarcaram.<br>Boa viagem! 🚌';
+  document.getElementById('alert-completo').style.display='flex';
+  try{
+    if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [523,659,784,1047].forEach((freq,i)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.frequency.value=freq;o.type='sine';
+      g.gain.setValueAtTime(0.3,ctx.currentTime+i*0.15);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.15+0.3);
+      o.start(ctx.currentTime+i*0.15);o.stop(ctx.currentTime+i*0.15+0.3);
+    });
+  }catch(e){}
+}
+
+// ===== FALTOSOS =====
+function showFaltosos(){
+  const faltando=[];
+  for(let n in P){const num=Number(n);if(!chk[num])faltando.push({num,nome:P[num].n,loc:P[num].l,colo:P[num].c});}
+  document.getElementById('falt-count-badge').textContent=faltando.length;
+  const body=document.getElementById('falt-body');
+  body.innerHTML=faltando.length===0
+    ?'<div class="falt-empty">🎉 Todos embarcaram!</div>'
+    :faltando.map(p=>`<div class="falt-item"><div class="falt-num">${String(p.num).padStart(2,'0')}</div><div class="falt-info"><div class="falt-name">${p.nome}${p.colo?' <span style="font-size:11px;color:#888">+ 👶 '+p.colo+'</span>':''}</div><div class="falt-loc">📍 ${p.loc}</div></div></div>`).join('');
+  document.getElementById('falt-overlay').style.display='flex';
+}
+
+// ===== EDIT =====
+function openEdit(n){
+  editingSeat=n;
+  document.getElementById('edit-title').textContent='✏️ Editar Poltrona '+String(n).padStart(2,'0');
+  document.getElementById('edit-input').value=P[n].n==='−'||P[n].n==='-'?'':P[n].n;
+  document.getElementById('edit-colo-input').value=P[n].c||'';
+
+  // Build locality select
+  const select=document.getElementById('edit-loc-select');
+  const currentLoc=P[n].l||'';
+  const locs=DAYS[currentDay].locs||[];
+  const allLocs=[...new Set([...locs, ...Object.values(P).map(p=>p.l).filter(Boolean)])];
+  const newInput=document.getElementById('edit-loc-new');
+
+  select.innerHTML='';
+  newInput.style.display='none';
+  newInput.value='';
+
+  if(allLocs.length===0){
+    // No localities yet — hide select, show text input directly
+    select.style.display='none';
+    newInput.style.display='block';
+    newInput.value=currentLoc;
+  } else {
+    select.style.display='block';
+    allLocs.forEach(loc=>{
+      const opt=document.createElement('option');
+      opt.value=loc;
+      opt.textContent=loc;
+      if(loc===currentLoc) opt.selected=true;
+      select.appendChild(opt);
+    });
+    // Add "nova" option
+    const newOpt=document.createElement('option');
+    newOpt.value='__nova__';
+    newOpt.textContent='+ Nova localidade...';
+    select.appendChild(newOpt);
+
+    // If current loc not in list, show text input
+    if(currentLoc && !allLocs.includes(currentLoc)){
+      newInput.style.display='block';
+      newInput.value=currentLoc;
+      select.value='__nova__';
+    }
+  }
+
+  document.getElementById('edit-overlay').style.display='flex';
+  setTimeout(()=>document.getElementById('edit-input').focus(),100);
+}
+
+function onLocSelectChange(val){
+  const newInput=document.getElementById('edit-loc-new');
+  if(val==='__nova__'){
+    newInput.style.display='block';
+    newInput.focus();
+  } else {
+    newInput.style.display='none';
+    newInput.value='';
+  }
+}
+function closeEdit(){document.getElementById('edit-overlay').style.display='none';editingSeat=null;}
+function syncLocs(){
+  // Rebuild locs list based on what's actually used in P
+  const usedLocs=[];
+  const seen=new Set();
+  // Preserve original order — go through existing locs first
+  const currentLocs=DAYS[currentDay].locs||[];
+  currentLocs.forEach(loc=>{
+    const stillUsed=Object.values(P).some(p=>p.l===loc);
+    if(stillUsed && !seen.has(loc)){ usedLocs.push(loc); seen.add(loc); }
+  });
+  // Add any new locs not in the original list
+  Object.values(P).forEach(p=>{
+    if(p.l && !seen.has(p.l)){ usedLocs.push(p.l); seen.add(p.l); }
+  });
+  DAYS[currentDay].locs=usedLocs;
+  try{ localStorage.setItem('days_structure',JSON.stringify(DAYS)); }catch(e){}
+  // Reset filter if active filter no longer exists
+  if(activeFilter!=='TODOS' && !usedLocs.includes(activeFilter)){
+    activeFilter='TODOS';
+  }
+  buildFilters(usedLocs);
+}
+
+function saveEdit(){
+  const newName=document.getElementById('edit-input').value.trim().toUpperCase();
+  const newColo=document.getElementById('edit-colo-input').value.trim().toUpperCase();
+  const selectEl=document.getElementById('edit-loc-select');
+  const selectVal=selectEl.style.display==='none' ? '__nova__' : selectEl.value;
+  const newLocRaw=document.getElementById('edit-loc-new').value.trim().toUpperCase();
+  const newLoc=selectVal==='__nova__' ? newLocRaw : selectVal;
+
+  if(!newName){alert('Digite um nome.');return;}
+  if(!newLoc){alert('Selecione ou digite uma localidade.');return;}
+
+  const n=editingSeat;
+  P[n].n=newName;
+  P[n].l=newLoc;
+  if(newColo) P[n].c=newColo; else delete P[n].c;
+  // Never reset tick or time on edit — only the tap on the seat changes that
+
+  // Add new locality to day's locs list if it's new, then sync (remove unused)
+  if(!DAYS[currentDay].locs.includes(newLoc)){
+    DAYS[currentDay].locs.push(newLoc);
+  }
+  syncLocs();
+
+  buildMap();
+  if(activeFilter!=='TODOS') setFilter(activeFilter);
+  updateStats(); saveState(); closeEdit();
+}
+
+// ===== PDF =====
+function openPdfPick(){
+  document.getElementById('pdf-pick-overlay').style.display='flex';
+}
+function closePdfPick(){
+  document.getElementById('pdf-pick-overlay').style.display='none';
+}
+
+function exportMapPDF(){
+  document.getElementById('pdf-report').innerHTML='';
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('pt-BR')+' às '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const day=DAYS[currentDay];
+  const title=day.title||day.label;
+  const subtitle=day.title?day.label:'';
+  const total=Object.keys(P).length;
+  const embarcados=Object.values(chk).filter(Boolean).length;
+  const faltando=total-embarcados;
+
+  // Build color palette for localities
+  const palette=[
+    '#FFD600','#00BCD4','#8D6E63','#E53935','#43A047',
+    '#FB8C00','#8E24AA','#1E88E5','#00897B','#F06292'
+  ];
+  // Use the same order as the filter buttons (DAYS[currentDay].locs)
+  const savedLocs = DAYS[currentDay].locs || [];
+  // Add any locs in P that aren't in savedLocs (shouldn't happen but safety net)
+  const allLocsInP = [...new Set(Object.values(P).map(p=>p.l).filter(l=>l&&l!=='VAZIO'&&l!==''))];
+  const locsNormal = [...savedLocs.filter(l=>l&&l!=='VAZIO'&&l!==''), ...allLocsInP.filter(l=>!savedLocs.includes(l))];
+  const hasVazio = Object.values(P).some(p=>!p.l||p.l===''||p.l==='VAZIO');
+  const locs = [...locsNormal, ...(hasVazio?['VAZIO']:[])];
+  const locColor = {};
+  const onlyOneLoc = locsNormal.length <= 1;
+  locsNormal.forEach((l,i)=>{ locColor[l]=onlyOneLoc?'#f0f0f0':palette[i%palette.length]; });
+  if(hasVazio) locColor['VAZIO']='#f0f0f0';
+
+  function getColor(loc){
+    if(!loc||loc===''||loc==='VAZIO') return '#f0f0f0';
+    return locColor[loc]||'#f0f0f0';
+  }
+  function getTextColor(bg){
+    // Dark text on light backgrounds, white on dark
+    const dark=['#FFD600','#f0f0f0','#00BCD4','#43A047','#00897B'];
+    return dark.includes(bg)?'#111':'#fff';
+  }
+
+  const report=document.getElementById('pdf-map-report');
+
+  // Header
+  let headerHtml=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div>
+        <h1 style="font-size:18px;font-weight:800;color:#1a3a5c;margin:0">🚌 ${title}</h1>
+        ${subtitle?`<div style="font-size:13px;color:#555;margin-top:2px">${subtitle}</div>`:''}
+        <div style="font-size:11px;color:#888;margin-top:3px">Gerado em ${dateStr}</div>
+      </div>
+      <div style="text-align:right">`;
+
+  // Locality legend (top right)
+  // Always show legend
+  headerHtml+=`<div style="font-size:11px;font-weight:700;color:#333;margin-bottom:4px">LOCALIDADES:</div>`;
+  locs.forEach(l=>{
+    const count=l==='VAZIO'
+      ? Object.values(P).filter(p=>!p.l||p.l===''||p.l==='VAZIO').length
+      : Object.values(P).filter(p=>p.l===l).length;
+    const bg=locColor[l];
+    const tc=getTextColor(bg);
+    headerHtml+=`<div style="background:${bg};color:${tc};border-radius:4px;padding:3px 8px;font-size:10px;font-weight:700;margin:2px 0;display:block;-webkit-print-color-adjust:exact;print-color-adjust:exact">${l} — ${count} passageiros</div>`;
+  });
+  headerHtml+=`</div></div>`;
+
+  // Summary
+  // Count colo for map
+  const coloMapTotal=Object.values(P).filter(p=>p.c).length;
+  const coloMapEmb=Object.keys(P).filter(n=>P[n].c&&chk[Number(n)]).length;
+  headerHtml+=`
+    <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+      <div style="background:#f5f5f5;border-radius:5px;padding:5px 12px;text-align:center"><div style="font-size:18px;font-weight:700">${total}</div><div style="font-size:10px;color:#666">Total</div></div>
+      <div style="background:#d4f5e7;border-radius:5px;padding:5px 12px;text-align:center"><div style="font-size:18px;font-weight:700;color:#1a8a52">${embarcados}</div><div style="font-size:10px;color:#666">Embarcados</div></div>
+      <div style="background:#fce8e6;border-radius:5px;padding:5px 12px;text-align:center"><div style="font-size:18px;font-weight:700;color:#c0303a">${faltando}</div><div style="font-size:10px;color:#666">Faltando</div></div>
+      ${coloMapTotal>0?`<div style="background:#fff8e1;border-radius:5px;padding:5px 12px;text-align:center"><div style="font-size:18px;font-weight:700;color:#d4881a">${coloMapEmb}/${coloMapTotal}</div><div style="font-size:10px;color:#666">👶 No colo</div></div>`:''}
+    </div>`;
+
+  // Front of bus
+  headerHtml+=`<div style="text-align:center;font-size:10px;color:#888;padding:4px 0;border-bottom:1px dashed #ccc;margin-bottom:6px;font-weight:600">⊙ MOTORISTA / FRENTE DO VEÍCULO</div>`;
+
+  report.style.cssText='-webkit-print-color-adjust:exact;print-color-adjust:exact';
+  report.innerHTML=headerHtml;
+
+  // Build seat grid — layout: 1,2 | corr | 3,4 then 5,6 | corr | 7,8 etc
+  // But per original bus layout: odd on left window
+  // Row pattern: seats [4n+1, 4n+2] on left, [4n+4, 4n+3] on right (so odd always on window)
+  const seatNums=Object.keys(P).map(Number).sort((a,b)=>a-b);
+  const grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:1fr 1fr 14px 1fr 1fr;gap:3px;-webkit-print-color-adjust:exact;print-color-adjust:exact';
+
+  for(let i=0;i<seatNums.length;i+=4){
+    const s=seatNums.slice(i,i+4); // [a,b,c,d]
+    // Left pair: s[0], s[1]
+    // Right pair: s[3], s[2] (reverse so odd stays on window side)
+    const leftPair=[s[0],s[1]];
+    const rightPair=s.length>3?[s[3],s[2]]:s.length>2?[undefined,s[2]]:[];
+
+    leftPair.forEach(n=>{
+      const cell=document.createElement('div');
+      if(n===undefined){
+        cell.style.cssText='border:1px solid #eee;border-radius:4px;min-height:46px;background:#fafafa';
+      } else {
+        const isEmb=!!chk[n];
+        const loc=P[n].l||'';
+        const isEmpty=!P[n].n||P[n].n==='-';
+        const bg=isEmpty?'#f0f0f0':getColor(loc);
+        const tc=isEmpty?'#aaa':getTextColor(bg);
+        cell.style.cssText=`border:1.5px solid ${isEmb?'#1a8a52':'#ccc'};border-radius:4px;min-height:46px;padding:3px 4px;background:${bg};position:relative;-webkit-print-color-adjust:exact;print-color-adjust:exact`;
+        cell.innerHTML=`<div style="font-size:8px;font-weight:700;color:${tc};opacity:.8">${String(n).padStart(2,'0')}${isEmb?' ✓':''}</div>`
+          +`<div style="font-size:9px;font-weight:700;color:${tc};line-height:1.2;margin-top:1px">${isEmpty?'—':shortName(P[n].n)}</div>`
+          +(loc&&!isEmpty?`<div style="font-size:7px;color:${tc};opacity:.75;margin-top:1px">${loc}</div>`:'')
+          +(P[n].c?`<div style="font-size:7px;color:${tc};opacity:.85;margin-top:1px">👶 ${shortName(P[n].c)}</div>`:'');
+      }
+      grid.appendChild(cell);
+    });
+
+    // Corridor
+    const corr=document.createElement('div');
+    corr.style.cssText='display:flex;align-items:center;justify-content:center;font-size:10px;color:#bbb';
+    corr.innerHTML='┊';
+    grid.appendChild(corr);
+
+    // Right pair (reversed order so odd on window)
+    const rightSlots=s.length>=4?[s[3],s[2]]:s.length===3?[undefined,s[2]]:[undefined,undefined];
+    rightSlots.forEach(n=>{
+      const cell=document.createElement('div');
+      if(n===undefined){
+        cell.style.cssText='border:1px solid #eee;border-radius:4px;min-height:46px;background:#fafafa';
+      } else {
+        const isEmb=!!chk[n];
+        const loc=P[n].l||'';
+        const isEmpty=!P[n].n||P[n].n==='-';
+        const bg=isEmpty?'#f0f0f0':getColor(loc);
+        const tc=isEmpty?'#aaa':getTextColor(bg);
+        cell.style.cssText=`border:1.5px solid ${isEmb?'#1a8a52':'#ccc'};border-radius:4px;min-height:46px;padding:3px 4px;background:${bg};position:relative;-webkit-print-color-adjust:exact;print-color-adjust:exact`;
+        cell.innerHTML=`<div style="font-size:8px;font-weight:700;color:${tc};opacity:.8">${String(n).padStart(2,'0')}${isEmb?' ✓':''}</div>`
+          +`<div style="font-size:9px;font-weight:700;color:${tc};line-height:1.2;margin-top:1px">${isEmpty?'—':shortName(P[n].n)}</div>`
+          +(loc&&!isEmpty?`<div style="font-size:7px;color:${tc};opacity:.75;margin-top:1px">${loc}</div>`:'')
+          +(P[n].c?`<div style="font-size:7px;color:${tc};opacity:.85;margin-top:1px">👶 ${shortName(P[n].c)}</div>`:'');
+      }
+      grid.appendChild(cell);
+    });
+  }
+
+  report.appendChild(grid);
+
+  // Bottom legend
+  const legend=document.createElement('div');
+  legend.style.cssText='display:flex;gap:10px;margin-top:8px;font-size:10px;color:#666;flex-wrap:wrap';
+  legend.innerHTML='<span>✓ = Embarcado</span><span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:10px;background:#f0f0f0;border:1px solid #ccc;border-radius:2px;display:inline-block"></span>Vazio</span>';
+  report.appendChild(legend);
+
+  // Colo table
+  const colos=Object.keys(P).map(Number).filter(n=>P[n].c);
+  if(colos.length>0){
+    const coloDiv=document.createElement('div');
+    coloDiv.style.cssText='margin-top:14px';
+    const rows=colos.map(n=>`
+      <tr>
+        <td style="padding:5px 8px;border:1px solid #ddd">${String(n).padStart(2,'0')}</td>
+        <td style="padding:5px 8px;border:1px solid #ddd;font-weight:600">${P[n].c}</td>
+        <td style="padding:5px 8px;border:1px solid #ddd">Vinculado a: ${P[n].n}</td>
+      </tr>`).join('');
+    coloDiv.innerHTML=`
+      <div style="font-size:12px;font-weight:700;color:#d4881a;margin-bottom:6px">👶 Crianças de Colo (${colos.length})</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <tr style="background:#fff8e1">
+          <th style="padding:5px 8px;border:1px solid #ddd;text-align:left">Poltrona</th>
+          <th style="padding:5px 8px;border:1px solid #ddd;text-align:left">Criança</th>
+          <th style="padding:5px 8px;border:1px solid #ddd;text-align:left">Responsável</th>
+        </tr>
+        ${rows}
+      </table>`;
+    report.appendChild(coloDiv);
+  }
+
+  window.print();
+}
+
+function exportPDF(){
+  document.getElementById('pdf-map-report').innerHTML='';
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('pt-BR')+' às '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const embarcados=[],faltando=[],colos=[];
+  for(let n in P){
+    const num=Number(n);
+    if(chk[num])embarcados.push({num,nome:P[num].n,loc:P[num].l});
+    else faltando.push({num,nome:P[num].n,loc:P[num].l});
+    if(P[num].c) colos.push({num,nome:P[num].n,colo:P[num].c});
+  }
+  const totalPoltronas=Object.keys(P).length;
+  const totalPessoas=totalPoltronas+colos.length;
+  const obs=document.getElementById('obs-field').value||'Nenhuma observação registrada.';
+  const rows_emb=embarcados.map(p=>`<tr><td>${String(p.num).padStart(2,'0')}</td><td>${p.nome}</td><td>${p.loc}</td><td>${hor[p.num]||'-'}</td></tr>`).join('');
+  const rows_falt=faltando.map(p=>`<tr><td>${String(p.num).padStart(2,'0')}</td><td>${p.nome}</td><td>${p.loc}</td><td>—</td></tr>`).join('');
+  const rows_colo=colos.map(p=>`<tr><td>${String(p.num).padStart(2,'0')}</td><td>${p.colo}</td><td>Vinculado a: ${p.nome}</td></tr>`).join('');
+  const coloSection = colos.length>0 ? `
+    <h2>👶 Crianças de Colo (${colos.length})</h2>
+    <table><tr><th>Poltrona</th><th>Criança</th><th>Responsável</th></tr>${rows_colo}</table>` : '';
+  document.getElementById('pdf-report').innerHTML=`
+    <h1>🚌 ${DAYS[currentDay].title ? DAYS[currentDay].title + ' — ' : ''}Relatório de Embarque</h1><div class="rdate" style="font-size:13px;color:#333;margin-bottom:2px">${DAYS[currentDay].label}</div>
+    <div class="rdate">Gerado em ${dateStr}</div>
+    <div class="summary">
+      <div class="sum-item"><div class="sum-n">${totalPoltronas}</div><div class="sum-l">Poltronas</div></div>
+      <div class="sum-item"><div class="sum-n ok">${embarcados.length}</div><div class="sum-l">Embarcados</div></div>
+      <div class="sum-item"><div class="sum-n falt">${faltando.length}</div><div class="sum-l">Faltando</div></div>
+      ${colos.length>0?`<div class="sum-item"><div class="sum-n" style="color:#d4881a">${colos.filter(p=>chk[p.num]).length}/${colos.length}</div><div class="sum-l">👶 No colo</div></div>`:''}
+    </div>
+    ${colos.length>0?`<div style="font-size:12px;color:#666;margin-bottom:10px">👥 Total de pessoas no ônibus (incluindo colo): <strong>${totalPessoas}</strong></div>`:''}
+    <h2>✅ Passageiros Embarcados (${embarcados.length})</h2>
+    <table><tr><th>#</th><th>Nome</th><th>Localidade</th><th>Horário</th></tr>${rows_emb||'<tr><td colspan="4">Nenhum embarcado.</td></tr>'}</table>
+    <h2>❌ Passageiros Faltosos (${faltando.length})</h2>
+    <table><tr><th>#</th><th>Nome</th><th>Localidade</th><th>Horário</th></tr>${rows_falt||'<tr><td colspan="4">Todos embarcaram!</td></tr>'}</table>
+    ${coloSection}
+    <h2>📝 Observações</h2>
+    <div class="obs-box">${obs.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+  window.print();
+}
+
+
+
+function shareWhatsApp(){
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('pt-BR');
+  const timeStr=now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const dayLabel=DAYS[currentDay].title ? DAYS[currentDay].title+' — '+DAYS[currentDay].label : DAYS[currentDay].label;
+  const total=Object.keys(P).length;
+
+  const embarcados=[],faltando=[],colos=[];
+  for(let n in P){
+    const num=Number(n);
+    if(chk[num]) embarcados.push({num,nome:P[num].n,loc:P[num].l});
+    else faltando.push({num,nome:P[num].n,loc:P[num].l});
+    if(P[num].c) colos.push({num,nome:P[num].n,colo:P[num].c});
+  }
+  const obs=document.getElementById('obs-field').value.trim();
+  const totalPessoas=total+colos.length;
+
+  let msg='';
+  msg+='🚌 *RELATÓRIO DE EMBARQUE*\n';
+  msg+='📅 '+dayLabel+'\n';
+  msg+='🕐 Gerado às '+timeStr+' de '+dateStr+'\n';
+  msg+='━━━━━━━━━━━━━━━━━━━━\n';
+  msg+='📊 *RESUMO*\n';
+  msg+='▶ Poltronas: '+total+'\n';
+  msg+='✅ Embarcados: '+embarcados.length+'\n';
+  msg+='❌ Faltando: '+faltando.length+'\n';
+  if(colos.length>0){
+    msg+='👶 No colo: '+colos.length+'\n';
+    msg+='👥 Total de pessoas: '+totalPessoas+'\n';
+  }
+  msg+='━━━━━━━━━━━━━━━━━━━━\n';
+  msg+='✅ *EMBARCADOS*\n';
+  if(embarcados.length===0){
+    msg+='Nenhum embarcado.\n';
+  } else {
+    embarcados.forEach(p=>{
+      const h=hor[p.num]?(' '+hor[p.num]):'';
+      const coloTag=P[p.num].c?(' + 👶 '+P[p.num].c):'';
+      msg+=String(p.num).padStart(2,'0')+' - '+p.nome+' ('+p.loc+')'+h+coloTag+'\n';
+    });
+  }
+  msg+='━━━━━━━━━━━━━━━━━━━━\n';
+  msg+='❌ *FALTOSOS*\n';
+  if(faltando.length===0){
+    msg+='Todos embarcaram! 🎉\n';
+  } else {
+    faltando.forEach(p=>{
+      const coloTag=P[p.num].c?(' + 👶 '+P[p.num].c):'';
+      msg+=String(p.num).padStart(2,'0')+' - '+p.nome+' ('+p.loc+')'+coloTag+'\n';
+    });
+  }
+  if(colos.length>0){
+    msg+='━━━━━━━━━━━━━━━━━━━━\n';
+    msg+='👶 *CRIANÇAS DE COLO*\n';
+    colos.forEach(p=>{
+      msg+=String(p.num).padStart(2,'0')+' - '+p.colo+' (vinculado a '+p.nome+')\n';
+    });
+  }
+  if(obs){
+    msg+='━━━━━━━━━━━━━━━━━━━━\n';
+    msg+='📝 *OBSERVAÇÕES*\n';
+    msg+=obs+'\n';
+  }
+  msg+='━━━━━━━━━━━━━━━━━━━━';
+
+  const encoded=encodeURIComponent(msg);
+  window.open('https://wa.me/?text='+encoded,'_blank');
+}
+
+function toggleDark(){
+  const isDark=document.body.classList.toggle('dark');
+  localStorage.setItem('darkMode',isDark?'1':'0');
+  updateDarkBtns(isDark);
+}
+function updateDarkBtns(isDark){
+  const icon=isDark?'☀️':'🌙';
+  const hb=document.getElementById('home-dark-btn');
+  const tb=document.getElementById('top-dark-btn');
+  if(hb)hb.textContent=icon;
+  if(tb)tb.textContent=icon;
+}
+function initDarkMode(){
+  const saved=localStorage.getItem('darkMode');
+  if(saved==='1'){
+    document.body.classList.add('dark');
+    updateDarkBtns(true);
+  }
+}
+
+
+// ===== ARCHIVE / HISTORY =====
+function archiveTrip(i){
+  if(!confirm(`Arquivar a viagem "${DAYS[i].label}"?\n\nEla ficará guardada no histórico.`)) return;
+  const state=loadDayState(i);
+  const obs=localStorage.getItem('day'+i+'_obs')||'';
+
+  // Apply saved names/colos/locs to passengers before snapshotting
+  const passengersCopy=JSON.parse(JSON.stringify(DAYS[i].passengers));
+  try{
+    const nm=localStorage.getItem('day'+i+'_names');
+    if(nm){const o=JSON.parse(nm);for(let n in o) if(passengersCopy[n]) passengersCopy[n].n=o[n];}
+    const cl=localStorage.getItem('day'+i+'_colos');
+    if(cl){const o=JSON.parse(cl);for(let n in passengersCopy) delete passengersCopy[n].c; for(let n in o) if(passengersCopy[n]) passengersCopy[n].c=o[n];}
+    const ls=localStorage.getItem('day'+i+'_locs');
+    if(ls){const o=JSON.parse(ls);for(let n in o) if(passengersCopy[n]) passengersCopy[n].l=o[n];}
+  }catch(e){}
+
+  const total=Object.keys(passengersCopy).length;
+  const emb=Object.values(state.chk).filter(Boolean).length;
+
+  HISTORY.unshift({
+    label:DAYS[i].label,
+    title:DAYS[i].title||'',
+    total,emb,obs,
+    archivedAt:new Date().toLocaleDateString('pt-BR'),
+    passengers:passengersCopy,
+    locs:JSON.parse(JSON.stringify(DAYS[i].locs||[])),
+    chk:state.chk
+  });
+
+  // Clear localStorage for this day
+  ['chk','hor','names','colos','locs','obs'].forEach(k=>{
+    try{ localStorage.removeItem('day'+i+'_'+k); }catch(e){}
+  });
+  // Shift remaining days
+  for(let j=i+1;j<DAYS.length;j++){
+    ['chk','hor','names','colos','locs','obs'].forEach(k=>{
+      try{
+        const val=localStorage.getItem('day'+j+'_'+k);
+        if(val!==null){ localStorage.setItem('day'+(j-1)+'_'+k,val); localStorage.removeItem('day'+j+'_'+k); }
+      }catch(e){}
+    });
+  }
+  DAYS.splice(i,1);
+  try{
+    localStorage.setItem('days_structure',JSON.stringify(DAYS));
+    localStorage.setItem('history_data',JSON.stringify(HISTORY));
+  }catch(e){}
+  renderHome();
+}
+
+function openHistory(){
+  const body=document.getElementById('history-body');
+  if(!HISTORY||HISTORY.length===0){
+    body.innerHTML='<div class="history-empty">Nenhuma viagem arquivada ainda.</div>';
+  } else {
+    // Sort by trip date ascending
+    const sorted=[...HISTORY].map((h,i)=>({...h,_orig:i})).sort((a,b)=>parseLabelDate(a.label)-parseLabelDate(b.label));
+    body.innerHTML=sorted.map((h)=>`
+      <div class="history-item">
+        <div class="history-info">
+          <div class="history-label">🚌 ${h.title ? h.title+' — ' : ''}${h.label}</div>
+          <div class="history-sub">✅ ${h.emb}/${h.total} embarcados · Arquivado em ${h.archivedAt}</div>
+          ${h.obs?`<div class="history-sub" style="margin-top:3px">📝 ${h.obs.slice(0,60)}${h.obs.length>60?'...':''}</div>`:''}
+        </div>
+        <div class="history-actions">
+          <button class="btn-restore" onclick="restoreHistory(${h._orig})">↩️ Restaurar</button>
+          <button class="btn-delete-hist" onclick="deleteHistory(${h._orig})">🗑️</button>
+        </div>
+      </div>`).join('');
+  }
+  document.getElementById('history-overlay').style.display='flex';
+}
+
+function closeHistory(){
+  document.getElementById('history-overlay').style.display='none';
+}
+
+function restoreHistory(i){
+  const h=HISTORY[i];
+  // Restore full passengers snapshot
+  const passengers=h.passengers || {};
+  // If no passengers saved (old format), rebuild empty
+  if(Object.keys(passengers).length===0){
+    for(let s=1;s<=h.total;s++) passengers[s]={n:'-',l:''};
+  }
+  const newDay={label:h.label, title:h.title||'', passengers, locs:h.locs||[]};
+  DAYS.push(newDay);
+  sortDays();
+  // Find the index of the restored day to save its chk state
+  const newIndex=DAYS.findIndex(d=>d.label===h.label);
+  if(newIndex>-1 && h.chk && Object.keys(h.chk).length>0){
+    try{ localStorage.setItem('day'+newIndex+'_chk',JSON.stringify(h.chk)); }catch(e){}
+  }
+  if(newIndex>-1 && h.obs){
+    try{ localStorage.setItem('day'+newIndex+'_obs', h.obs); }catch(e){}
+  }
+  // Remove from history
+  HISTORY.splice(i,1);
+  try{
+    localStorage.setItem('days_structure',JSON.stringify(DAYS));
+    localStorage.setItem('history_data',JSON.stringify(HISTORY));
+  }catch(e){}
+  closeHistory();
+  renderHome();
+}
+
+function deleteHistory(i){
+  if(!confirm('Excluir permanentemente esta viagem do histórico?')) return;
+  HISTORY.splice(i,1);
+  try{ localStorage.setItem('history_data',JSON.stringify(HISTORY)); }catch(e){}
+  openHistory();
+}
+
+// ===== CREATE TRIP =====
+function parseLabelDate(label){
+  try{
+    const parts=label.split(' ');
+    if(parts.length>=2){
+      const dp=parts[1].split('/');
+      if(dp.length===3){
+        const yy=parseInt(dp[2])<50?'20'+dp[2]:'19'+dp[2];
+        return new Date(`${yy}-${dp[1]}-${dp[0]}T12:00:00`);
+      }
+    }
+  }catch(e){}
+  return new Date(0);
+}
+
+function sortDays(){
+  DAYS.sort((a,b)=>parseLabelDate(a.label)-parseLabelDate(b.label));
+  try{ localStorage.setItem('days_structure',JSON.stringify(DAYS)); }catch(e){}
+}
+function openCreateTrip(){
+  // Set default date to today
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('trip-title').value = '';
+  document.getElementById('trip-date').value = today;
+  document.getElementById('trip-seats').value = '';
+  document.getElementById('create-trip-overlay').style.display='flex';
+  setTimeout(()=>document.getElementById('trip-title').focus(), 100);
+}
+function closeCreateTrip(){
+  document.getElementById('create-trip-overlay').style.display='none';
+}
+function confirmCreateTrip(){
+  const titleVal = document.getElementById('trip-title').value.trim();
+  const dateVal = document.getElementById('trip-date').value;
+  const seatsVal = Math.floor(Number(document.getElementById('trip-seats').value));
+  if(!titleVal){ alert('Digite um título para a viagem.'); return; }
+  if(!dateVal){ alert('Escolha a data da viagem.'); return; }
+  if(!seatsVal || seatsVal < 1 || isNaN(seatsVal)){ alert('Informe a quantidade de poltronas.'); return; }
+
+  // Format date part: "Sexta 04/07/26"
+  const d = new Date(dateVal + 'T12:00:00');
+  const weekdays = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const dayName = weekdays[d.getDay()];
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yy = String(d.getFullYear()).slice(2);
+  const dateLabel = `${dayName} ${dd}/${mm}/${yy}`;
+
+  // Build empty passengers
+  const passengers = {};
+  for(let i=1; i<=seatsVal; i++){
+    passengers[i] = {n: '-', l: ''};
+  }
+
+  // Add to DAYS — store title and dateLabel separately
+  DAYS.push({label: dateLabel, title: titleVal, passengers, locs:[]});
+  sortDays();
+  closeCreateTrip();
+  renderHome();
+}
+
+
+let editingTripIndex = null;
+
+function openEditTrip(i){
+  editingTripIndex = i;
+  const day = DAYS[i];
+  document.getElementById('edit-trip-title').value = day.title || '';
+  // Parse label to extract date — format "Weekday DD/MM/YY"
+  const parts = day.label.split(' ');
+  let dateVal = '';
+  if(parts.length >= 2){
+    const dateParts = parts[1].split('/');
+    if(dateParts.length === 3){
+      const dd = dateParts[0], mm = dateParts[1], yy = dateParts[2];
+      const fullYear = parseInt(yy) < 50 ? '20'+yy : '19'+yy;
+      dateVal = `${fullYear}-${mm}-${dd}`;
+    }
+  }
+  document.getElementById('edit-trip-date').value = dateVal;
+  document.getElementById('edit-trip-seats').value = Object.keys(day.passengers).length;
+  document.getElementById('edit-trip-overlay').style.display = 'flex';
+}
+
+function closeEditTrip(){
+  document.getElementById('edit-trip-overlay').style.display = 'none';
+  editingTripIndex = null;
+}
+
+function confirmEditTrip(){
+  const titleVal = document.getElementById('edit-trip-title').value.trim();
+  const dateVal = document.getElementById('edit-trip-date').value;
+  const seatsVal = Math.floor(Number(document.getElementById('edit-trip-seats').value));
+  if(!titleVal){ alert('Digite um título para a viagem.'); return; }
+  if(!dateVal){ alert('Escolha a data da viagem.'); return; }
+  if(!seatsVal || seatsVal < 1 || isNaN(seatsVal)){ alert('Informe a quantidade de poltronas.'); return; }
+
+  const i = editingTripIndex;
+  const day = DAYS[i];
+
+  // Update title
+  day.title = titleVal;
+
+  // Update label (date part)
+  const d = new Date(dateVal + 'T12:00:00');
+  const weekdays = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const dayName = weekdays[d.getDay()];
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yy = String(d.getFullYear()).slice(2);
+  day.label = `${dayName} ${dd}/${mm}/${yy}`;
+
+  // Adjust seats if changed
+  const currentSeats = Object.keys(day.passengers).length;
+  if(seatsVal > currentSeats){
+    // Add new empty seats
+    for(let s=currentSeats+1; s<=seatsVal; s++){
+      day.passengers[s] = {n:'-', l:''};
+    }
+  } else if(seatsVal < currentSeats){
+    // Remove extra seats and clean their data from localStorage
+    for(let s=seatsVal+1; s<=currentSeats; s++){
+      delete day.passengers[s];
+    }
+    // Update localStorage keys to remove deleted seats
+    const updateKey = (key) => {
+      try{
+        const raw = localStorage.getItem('day'+i+'_'+key);
+        if(!raw) return;
+        const obj = JSON.parse(raw);
+        for(let s=seatsVal+1; s<=currentSeats; s++){
+          delete obj[s];
+          delete obj[String(s)];
+        }
+        localStorage.setItem('day'+i+'_'+key, JSON.stringify(obj));
+      }catch(e){}
+    };
+    updateKey('chk');
+    updateKey('hor');
+    updateKey('names');
+    updateKey('colos');
+    updateKey('locs');
+  }
+
+  sortDays();
+  closeEditTrip();
+  renderHome();
+}
+
+function deleteTrip(i){
+  if(!confirm(`Excluir a viagem "${DAYS[i].label}"?\n\nTudo será apagado: passageiros, embarques, observações e cache.`)) return;
+  // Clear all localStorage keys for this day
+  ['chk','hor','names','colos','locs','obs'].forEach(k=>{
+    try{ localStorage.removeItem('day'+i+'_'+k); }catch(e){}
+  });
+  // If deleting current open day, clear current_day
+  try{
+    const cd=localStorage.getItem('current_day');
+    if(cd!==null && parseInt(cd)===i) localStorage.removeItem('current_day');
+    // Shift keys for days after the deleted one
+    for(let j=i+1; j<DAYS.length; j++){
+      ['chk','hor','names','colos','locs','obs'].forEach(k=>{
+        try{
+          const val=localStorage.getItem('day'+j+'_'+k);
+          if(val!==null){
+            localStorage.setItem('day'+(j-1)+'_'+k, val);
+            localStorage.removeItem('day'+j+'_'+k);
+          }
+        }catch(e){}
+      });
+    }
+  }catch(e){}
+  // Remove from DAYS array
+  DAYS.splice(i,1);
+  try{ localStorage.setItem('days_structure', JSON.stringify(DAYS)); }catch(e){}
+  renderHome();
+}
+
+// ===== PER-DAY EXCEL IMPORT =====
+function handleDayExcelImport(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      if(!wb.SheetNames.length){ alert('❌ Nenhuma aba encontrada no arquivo.'); return; }
+      // Use first sheet only
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      // Detect headers
+      const headers = {};
+      for(let c=range.s.c; c<=range.e.c; c++){
+        const cell = ws[XLSX.utils.encode_cell({r:0, c})];
+        const val = cell ? (cell.v||'').toString().trim().toUpperCase() : '';
+        if(val.includes('POLTRONA')) headers.p=c;
+        else if(val.includes('NOME')) headers.n=c;
+        else if(val.includes('LOCALIDADE')||val.includes('LOCAL')) headers.l=c;
+        else if(val.includes('COLO')) headers.c=c;
+      }
+      const iP=headers.p??0, iN=headers.n??1, iL=headers.l??2, iC=headers.c??3;
+
+      const passengers = {};
+      const locs = [], seenLocs = new Set();
+      for(let r=range.s.r+1; r<=range.e.r; r++){
+        const cellP = ws[XLSX.utils.encode_cell({r, c:iP})];
+        const cellN = ws[XLSX.utils.encode_cell({r, c:iN})];
+        const cellL = ws[XLSX.utils.encode_cell({r, c:iL})];
+        const cellC = ws[XLSX.utils.encode_cell({r, c:iC})];
+        const num = cellP ? parseInt(cellP.v) : NaN;
+        const name = cellN ? (cellN.v||'').toString().trim().toUpperCase() : '';
+        const loc = cellL ? (cellL.v||'').toString().trim().toUpperCase() : '';
+        const colo = cellC ? (cellC.v||'').toString().trim().toUpperCase() : '';
+        if(!num || isNaN(num)) continue;
+        const entry = {n: name||'-', l: loc||''};
+        if(colo && colo !== '-') entry.c = colo;
+        passengers[num] = entry;
+        if(loc && !seenLocs.has(loc)){ seenLocs.add(loc); locs.push(loc); }
+      }
+      if(!Object.keys(passengers).length){ alert('❌ Nenhum passageiro encontrado.'); return; }
+
+      // Clear this day's localStorage before applying new data (fix cache bug)
+      ['chk','hor','names','colos','locs','obs'].forEach(k=>{
+        try{ localStorage.removeItem('day'+currentDay+'_'+k); }catch(ex){}
+      });
+
+      // Update current day data
+      DAYS[currentDay].passengers = passengers;
+      DAYS[currentDay].locs = locs;
+      try{ localStorage.setItem('days_structure', JSON.stringify(DAYS)); }catch(e){}
+
+      // Reload current day cleanly
+      openDay(currentDay);
+      alert('✅ Excel importado com sucesso!');
+    } catch(err){
+      alert('❌ Não foi possível ler o arquivo. Verifique se é um Excel válido.');
+    }
+    event.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ===== EXCEL IMPORT =====
+let pendingExcelData = null;
+
+function handleExcelImport(event){
+  const file = event.target.files[0];
+  if(!file){ return; }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      const days = [];
+      wb.SheetNames.forEach(sheetName => {
+        const ws = wb.Sheets[sheetName];
+        // Read cell by cell to avoid SheetJS sheet_to_json quirks
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        // Find header row (row 0) to detect column indexes
+        const headers = {};
+        for(let c=range.s.c; c<=range.e.c; c++){
+          const cell = ws[XLSX.utils.encode_cell({r:0, c})];
+          const val = cell ? (cell.v||'').toString().trim().toUpperCase() : '';
+          if(val.includes('POLTRONA')) headers.p=c;
+          else if(val.includes('NOME')) headers.n=c;
+          else if(val.includes('LOCALIDADE')||val.includes('LOCAL')) headers.l=c;
+          else if(val.includes('COLO')) headers.c=c;
+        }
+        const iP=headers.p??0, iN=headers.n??1, iL=headers.l??2, iC=headers.c??3;
+
+        const passengers = {};
+        const locs = [], seenLocs = new Set();
+        for(let r=range.s.r+1; r<=range.e.r; r++){
+          const cellP = ws[XLSX.utils.encode_cell({r, c:iP})];
+          const cellN = ws[XLSX.utils.encode_cell({r, c:iN})];
+          const cellL = ws[XLSX.utils.encode_cell({r, c:iL})];
+          const cellC = ws[XLSX.utils.encode_cell({r, c:iC})];
+          const num = cellP ? parseInt(cellP.v) : NaN;
+          const name = cellN ? (cellN.v||'').toString().trim().toUpperCase() : '';
+          const loc = cellL ? (cellL.v||'').toString().trim().toUpperCase() : '';
+          const colo = cellC ? (cellC.v||'').toString().trim().toUpperCase() : '';
+          if(!num || isNaN(num)) continue;
+          const entry = {n: name||'-', l: loc||'VAZIO'};
+          if(colo && colo !== '-') entry.c = colo;
+          passengers[num] = entry;
+          const locKey = loc||'VAZIO';
+          if(!seenLocs.has(locKey)){ seenLocs.add(locKey); locs.push(locKey); }
+        }
+        if(Object.keys(passengers).length > 0){
+          days.push({label: sheetName, passengers, locs});
+        }
+      });
+      if(days.length === 0){
+        alert('❌ Nenhum dado encontrado no arquivo. Verifique se as colunas são: POLTRONA, NOME, LOCALIDADE, COLO.');
+        event.target.value = '';
+        return;
+      }
+      // Check if there is saved progress
+      const hasProgress = days.some((_,i) => {
+        try{ const d=localStorage.getItem('day'+i+'_chk'); return d && Object.values(JSON.parse(d)).some(Boolean); }catch(e){ return false; }
+      }) || DAYS.some((_,i) => {
+        try{ const d=localStorage.getItem('day'+i+'_chk'); return d && Object.values(JSON.parse(d)).some(Boolean); }catch(e){ return false; }
+      });
+      pendingExcelData = days;
+      if(hasProgress){
+        document.getElementById('import-confirm-overlay').style.display='flex';
+      } else {
+        confirmExcelImport();
+      }
+    } catch(err){
+      alert('❌ Não foi possível ler o arquivo. Verifique se é um Excel válido (.xlsx).');
+    }
+    event.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function cancelExcelImport(){
+  pendingExcelData = null;
+  document.getElementById('import-confirm-overlay').style.display='none';
+}
+
+function confirmExcelImport(){
+  document.getElementById('import-confirm-overlay').style.display='none';
+  if(!pendingExcelData) return;
+  // Clear all saved progress
+  const oldCount = Math.max(DAYS.length, pendingExcelData.length, 10);
+  for(let i=0; i<oldCount; i++){
+    ['chk','hor','names','colos','obs'].forEach(k => {
+      try{ localStorage.removeItem('day'+i+'_'+k); }catch(e){}
+    });
+  }
+  // Apply new data
+  DAYS = pendingExcelData;
+  // Persist DAYS structure so it survives page reload
+  try{ localStorage.setItem('days_structure', JSON.stringify(DAYS)); }catch(e){}
+  pendingExcelData = null;
+  renderHome();
+}
+
+// ===== SETTINGS / BACKUP =====
+function openSettings(){
+  document.getElementById('settings-status').style.display='none';
+  document.getElementById('settings-overlay').style.display='flex';
+}
+function closeSettings(){
+  document.getElementById('settings-overlay').style.display='none';
+}
+
+function showSettingsStatus(msg,isError){
+  const el=document.getElementById('settings-status');
+  el.textContent=msg;
+  el.className='settings-status '+(isError?'err':'ok');
+}
+
+function exportBackup(){
+  try{
+    const backup={
+      app:'embarque-app-backup',
+      version:1,
+      exportedAt:new Date().toISOString(),
+      days:[]
+    };
+    DAYS.forEach((day,i)=>{
+      let chkData={}, horData={}, namesData={}, colosData={}, locsData={}, obsData='';
+      try{ const d=localStorage.getItem('day'+i+'_chk'); if(d) chkData=JSON.parse(d); }catch(e){}
+      try{ const d=localStorage.getItem('day'+i+'_hor'); if(d) horData=JSON.parse(d); }catch(e){}
+      try{ const d=localStorage.getItem('day'+i+'_names'); if(d) namesData=JSON.parse(d); }catch(e){}
+      try{ const d=localStorage.getItem('day'+i+'_colos'); if(d) colosData=JSON.parse(d); }catch(e){}
+      try{ const d=localStorage.getItem('day'+i+'_locs'); if(d) locsData=JSON.parse(d); }catch(e){}
+      try{ const d=localStorage.getItem('day'+i+'_obs'); if(d) obsData=d; }catch(e){}
+      backup.days.push({
+        label:day.label,
+        chk:chkData, hor:horData, names:namesData, colos:colosData, locs:locsData, obs:obsData
+      });
+    });
+
+    backup.days_structure = DAYS;
+    backup.history = HISTORY;
+    const json=JSON.stringify(backup,null,2);
+    const blob=new Blob([json],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const now=new Date();
+    const dateTag=now.toISOString().slice(0,10);
+    a.href=url;
+    a.download='backup_embarque_'+dateTag+'.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showSettingsStatus('✅ Backup exportado com sucesso!',false);
+  }catch(e){
+    showSettingsStatus('❌ Erro ao exportar backup.',true);
+  }
+}
+
+function importBackup(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const backup=JSON.parse(e.target.result);
+      if(!backup||backup.app!=='embarque-app-backup'||!Array.isArray(backup.days)){
+        showSettingsStatus('❌ Arquivo inválido. Selecione um backup gerado por este app.',true);
+        return;
+      }
+      // Restore DAYS structure if present in backup
+      if(backup.days_structure && Array.isArray(backup.days_structure) && backup.days_structure.length>0){
+        DAYS = backup.days_structure;
+        try{ localStorage.setItem('days_structure', JSON.stringify(DAYS)); }catch(e){}
+      }
+      if(backup.history && Array.isArray(backup.history)){
+        HISTORY = backup.history;
+        try{ localStorage.setItem('history_data', JSON.stringify(HISTORY)); }catch(e){}
+      }
+      // Match backup days to current DAYS by label; fallback to index
+      backup.days.forEach((bd,bi)=>{
+        let targetIndex=DAYS.findIndex(d=>d.label===bd.label);
+        if(targetIndex===-1) targetIndex=bi;
+        if(targetIndex<0||targetIndex>=DAYS.length)return;
+        localStorage.setItem('day'+targetIndex+'_chk',JSON.stringify(bd.chk||{}));
+        localStorage.setItem('day'+targetIndex+'_hor',JSON.stringify(bd.hor||{}));
+        localStorage.setItem('day'+targetIndex+'_names',JSON.stringify(bd.names||{}));
+        localStorage.setItem('day'+targetIndex+'_colos',JSON.stringify(bd.colos||{}));
+        localStorage.setItem('day'+targetIndex+'_locs',JSON.stringify(bd.locs||{}));
+        localStorage.setItem('day'+targetIndex+'_obs',bd.obs||'');
+      });
+      showSettingsStatus('✅ Backup restaurado! Atualizando...',false);
+      setTimeout(()=>{
+        closeSettings();
+        if(currentDay!==null){
+          openDay(currentDay);
+        } else {
+          renderHome();
+        }
+      },900);
+    }catch(err){
+      showSettingsStatus('❌ Não foi possível ler o arquivo. Verifique se é um backup válido.',true);
+    }
+    event.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+// ===== INIT =====
+try{
+  const saved = localStorage.getItem('days_structure');
+  if(saved){
+    const parsed = JSON.parse(saved);
+    if(Array.isArray(parsed) && parsed.length > 0) DAYS = parsed;
+  }
+}catch(e){}
+try{
+  const hSaved = localStorage.getItem('history_data');
+  if(hSaved){
+    const parsed = JSON.parse(hSaved);
+    if(Array.isArray(parsed)) HISTORY = parsed;
+  }
+}catch(e){}
+
+initDarkMode();
+
+// Restore last open day if user was inside a day before refresh
+try{
+  const savedDay = localStorage.getItem('current_day');
+  if(savedDay !== null && DAYS.length > 0){
+    const dayIndex = parseInt(savedDay);
+    if(!isNaN(dayIndex) && dayIndex >= 0 && dayIndex < DAYS.length){
+      openDay(dayIndex);
+    } else {
+      renderHome();
+    }
+  } else {
+    renderHome();
+  }
+}catch(e){
+  renderHome();
+}
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js');
+    });
+}
+</script>
+
+
+</body>
+</html>
