@@ -411,8 +411,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   .btn-make-empty{width:100%;margin-top:10px;padding:10px;background:#fff;border:1.5px solid #8D6E63;border-radius:8px;color:#8D6E63;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:none}
   .btn-make-empty:active{background:#8D6E63;color:#fff}
   body.dark .btn-make-empty{background:#1e1e1e;border-color:#8D6E63;color:#a0857a}
-</style>
 
+  /* Tutorial */
+  #tutorial-overlay{display:none;position:fixed;inset:0;z-index:9000;pointer-events:none}
+  #tutorial-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9001;pointer-events:all}
+  #tutorial-highlight{position:fixed;z-index:9002;border-radius:10px;box-shadow:0 0 0 4px #f4a12b, 0 0 0 9999px rgba(0,0,0,.75);pointer-events:none;transition:all .3s ease}
+  #tutorial-box{position:fixed;z-index:9003;background:#fff;border-radius:14px;padding:18px 16px;max-width:300px;width:88%;box-shadow:0 8px 32px rgba(0,0,0,.3);pointer-events:all}
+  #tutorial-box .t-step{font-size:10px;color:#aaa;font-weight:600;margin-bottom:4px}
+  #tutorial-box .t-title{font-size:15px;font-weight:800;color:#1a3a5c;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  #tutorial-box .t-body{font-size:13px;color:#444;line-height:1.6;margin-bottom:14px}
+  #tutorial-box .t-body b{color:#1a3a5c}
+  #tutorial-box .t-body code{background:#f0f4f8;border-radius:4px;padding:1px 5px;font-size:11px;font-family:monospace}
+  #tutorial-box .t-actions{display:flex;gap:8px;align-items:center}
+  #tutorial-box .t-skip{background:none;border:none;font-size:12px;color:#aaa;cursor:pointer;font-family:inherit;padding:0}
+  #tutorial-box .t-prev{padding:8px 12px;background:#f0f0f0;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;color:#555}
+  #tutorial-box .t-next{flex:1;padding:9px;background:#1a3a5c;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:#fff}
+  #tutorial-box .t-finish{flex:1;padding:9px;background:#43A047;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:#fff}
+  .btn-tutorial{background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.08);line-height:1}
+  body.dark .btn-tutorial{background:#2a2a2a;border-color:#3a3a3a}
+  body.dark #tutorial-box{background:#1e1e1e!important}
+  body.dark #tutorial-box .t-title{color:#4dd9a0}
+  body.dark #tutorial-box .t-body{color:#ccc}
+  body.dark #tutorial-box .t-body b{color:#4dd9a0}
+  body.dark #tutorial-box .t-body code{background:#2a2a2a;color:#4dd9a0}
+  body.dark #tutorial-box .t-prev{background:#2a2a2a;color:#aaa}
+  body.dark #tutorial-box .t-skip{color:#555}
+</style>
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1976d2">
@@ -428,6 +452,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div id="home-screen">
   <button class="home-settings-btn" onclick="openSettings()" id="home-settings-btn">⚙️</button>
   <button class="home-settings-btn" style="right:60px;left:auto" onclick="openHistory()">📂</button>
+  <button class="home-settings-btn" style="right:105px;left:auto" onclick="startTutorial()" title="Tutorial">❓</button>
   <button class="home-dark-btn" onclick="toggleDark()" id="home-dark-btn">🌙</button>
   <div class="home-icon">🚌</div>
   <div class="home-title">Controle de Embarque</div>
@@ -635,6 +660,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<!-- Tutorial -->
+<div id="tutorial-screen" style="display:none;position:fixed;inset:0;z-index:9000;background:#0f1923;flex-direction:column">
+  <div style="background:#1a3a5c;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+    <div style="color:#fff;font-size:15px;font-weight:700">📖 Tutorial</div>
+    <div style="color:#aaa;font-size:12px" id="t-step-label">1 / 20</div>
+    <button onclick="endTutorial()" style="background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:13px;cursor:pointer;font-family:inherit">✕ Fechar</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:16px">
+    <div id="t-illustration" style="background:#1e2d3d;border-radius:12px;margin-bottom:16px;overflow:hidden;min-height:220px;display:flex;align-items:center;justify-content:center"></div>
+    <div id="t-title" style="font-size:17px;font-weight:800;color:#fff;margin-bottom:8px"></div>
+    <div id="t-body" style="font-size:13px;color:#ccc;line-height:1.7"></div>
+  </div>
+  <div style="background:#1a3a5c;flex-shrink:0;padding:10px 12px 24px">
+    <div id="t-dots" style="display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px;width:100%;box-sizing:border-box">
+      <button id="t-prev" onclick="tutorialPrev()" style="flex:1;padding:11px 8px;background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;font-family:inherit">← Anterior</button>
+      <button id="t-next" onclick="tutorialNext()" style="flex:1;padding:11px 8px;background:#f4a12b;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Próximo →</button>
+      <button id="t-finish" onclick="endTutorial()" style="display:none;flex:1;padding:11px 8px;background:#43A047;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">✅ Concluir</button>
+    </div>
+  </div>
+</div>
+
 <!-- Settings / Backup -->
 <div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:996;align-items:center;justify-content:center">
   <div class="settings-panel">
@@ -731,6 +778,7 @@ function renderHome(){
     wrap.addEventListener('touchstart',()=>{ cardMoved=false; cardPressTimer=setTimeout(()=>{ cardPressTimer=null; openEditTrip(i); },800); },{passive:true});
     wrap.addEventListener('touchmove',()=>{ cardMoved=true; if(cardPressTimer){clearTimeout(cardPressTimer);cardPressTimer=null;} },{passive:true});
     wrap.addEventListener('touchend',()=>{ if(cardPressTimer){clearTimeout(cardPressTimer);cardPressTimer=null;} },{passive:true});
+    wrap.addEventListener('contextmenu',(e)=>{ e.preventDefault(); openEditTrip(i); });
 
     wrap.appendChild(card);
     container.appendChild(wrap);
@@ -2436,6 +2484,569 @@ function importBackup(event){
   reader.readAsText(file);
 }
 
+// ===== TUTORIAL =====
+let tutorialStep = 0;
+
+const TUTORIAL_STEPS = [
+  {
+    title: '👋 Bem-vindo ao App de Embarque!',
+    body: 'Este tutorial vai te guiar por <b>todas as funções</b> do app passo a passo, com ilustrações de cada tela.<br><br>Navegue com os botões <b>Próximo →</b> e <b>← Anterior</b>, ou toque em <b>✕ Fechar</b> a qualquer momento.',
+    svg: `<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="200" fill="#0f1923"/>
+      <rect x="60" y="30" width="200" height="140" rx="20" fill="#1a3a5c"/>
+      <text x="160" y="75" text-anchor="middle" fill="#fff" font-size="36">🚌</text>
+      <text x="160" y="110" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">App de Embarque</text>
+      <text x="160" y="130" text-anchor="middle" fill="#aaa" font-size="11">Controle de passageiros</text>
+      <text x="160" y="155" text-anchor="middle" fill="#f4a12b" font-size="11">Tutorial interativo</text>
+    </svg>`
+  },
+  {
+    title: '🏠 Tela Inicial',
+    body: 'Esta é a <b>tela inicial</b> do app. Aqui você vê todas as viagens criadas em cards, com título, data e progresso de embarque.<br><br>No topo direito ficam os botões de <b>❓ Tutorial</b>, <b>📂 Histórico</b> e <b>⚙️ Configurações</b>.<br>No rodapé, o botão <b>➕ Criar Viagem</b>.',
+    svg: `<svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="220" fill="#f0f2f5"/>
+      <rect width="320" height="38" fill="#1a3a5c"/>
+      <text x="16" y="24" fill="#fff" font-size="13" font-weight="bold">🚌 Controle de Embarque</text>
+      <circle cx="262" cy="19" r="10" fill="#f4a12b"/>
+      <text x="262" y="24" text-anchor="middle" fill="#fff" font-size="11">❓</text>
+      <circle cx="284" cy="19" r="10" fill="rgba(255,255,255,.2)"/>
+      <text x="284" y="24" text-anchor="middle" fill="#fff" font-size="11">📂</text>
+      <circle cx="306" cy="19" r="10" fill="rgba(255,255,255,.2)"/>
+      <text x="306" y="24" text-anchor="middle" fill="#fff" font-size="11">⚙️</text>
+      <text x="160" y="62" text-anchor="middle" fill="#888" font-size="10" font-weight="bold">VIAGENS ATIVAS</text>
+      <rect x="16" y="70" width="288" height="75" rx="12" fill="#fff"/>
+      <text x="32" y="92" fill="#1a3a5c" font-size="13" font-weight="bold">🚌 Excursão Ilha Grande</text>
+      <text x="32" y="108" fill="#888" font-size="10">Sexta 25/07/26 · 46 passageiros</text>
+      <rect x="32" y="116" width="240" height="6" rx="3" fill="#f0f0f0"/>
+      <rect x="32" y="116" width="120" height="6" rx="3" fill="#4dd9a0"/>
+      <text x="32" y="135" fill="#aaa" font-size="10">23 embarcados (50%)</text>
+      <rect x="16" y="158" width="288" height="40" rx="10" fill="#1a3a5c"/>
+      <text x="160" y="183" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">+ Criar Viagem</text>
+    </svg>`
+  },
+  {
+    title: '➕ Criar Nova Viagem',
+    body: 'Toque em <b>+ Criar Viagem</b> para criar uma nova viagem. Um formulário aparecerá com 3 campos:<br><br>• <b>📝 Título</b> — ex: "Excursão Ilha Grande"<br>• <b>📅 Data</b> — escolha no calendário<br>• <b>💺 Quantidade de lugares</b> — funciona para <b>ônibus, van, kombi, escuna</b> ou qualquer veículo!<br><br>Após criar, o card aparece na tela inicial ordenado por data.',
+    svg: `<svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="220" fill="rgba(0,0,0,.6)"/>
+      <rect x="20" y="20" width="280" height="180" rx="16" fill="#fff"/>
+      <text x="160" y="50" text-anchor="middle" fill="#1a3a5c" font-size="14" font-weight="bold">🚌 Criar Nova Viagem</text>
+      <text x="36" y="72" fill="#555" font-size="10" font-weight="bold">📝 Título da viagem</text>
+      <rect x="32" y="78" width="256" height="26" rx="6" fill="#f5f5f5" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="44" y="96" fill="#aaa" font-size="10">Ex: Excursão Ilha Grande</text>
+      <text x="36" y="118" fill="#555" font-size="10" font-weight="bold">📅 Data da viagem</text>
+      <rect x="32" y="124" width="256" height="26" rx="6" fill="#f5f5f5" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="44" y="142" fill="#333" font-size="10">25/07/2026</text>
+      <text x="36" y="164" fill="#555" font-size="10" font-weight="bold">💺 Quantidade de poltronas</text>
+      <rect x="32" y="170" width="256" height="26" rx="6" fill="#f5f5f5" stroke="#1a3a5c" stroke-width="1.5"/>
+      <text x="44" y="188" fill="#333" font-size="10">46</text>
+      <rect x="32" y="200" width="120" height="10" rx="5" fill="#e0e0e0"/>
+      <rect x="162" y="200" width="126" height="10" rx="5" fill="#1a3a5c"/>
+    </svg>`
+  },
+  {
+    title: '✏️ Editar / Arquivar / Excluir Viagem',
+    body: 'Para editar uma viagem já criada:<br><br>• <b>Celular:</b> segure o dedo no card por 1 segundo (toque longo)<br>• <b>Computador:</b> clique com o botão direito no card<br><br>O painel de edição permite alterar <b>título, data e poltronas</b>.<br><br>Também há botões para:<br>• <b>📦 Arquivar</b> — move para o histórico<br>• <b>🗑️ Excluir</b> — remove permanentemente',
+    svg: `<svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="220" fill="rgba(0,0,0,.6)"/>
+      <rect x="20" y="10" width="280" height="200" rx="16" fill="#fff"/>
+      <text x="160" y="35" text-anchor="middle" fill="#1a3a5c" font-size="13" font-weight="bold">✏️ Editar Viagem</text>
+      <text x="36" y="55" fill="#555" font-size="10">📝 Título</text>
+      <rect x="32" y="60" width="256" height="22" rx="5" fill="#f5f5f5" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="44" y="75" fill="#333" font-size="10">Excursão Ilha Grande</text>
+      <text x="36" y="96" fill="#555" font-size="10">📅 Data</text>
+      <rect x="32" y="101" width="256" height="22" rx="5" fill="#f5f5f5" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="44" y="116" fill="#333" font-size="10">25/07/2026</text>
+      <text x="36" y="137" fill="#555" font-size="10">💺 Poltronas</text>
+      <rect x="32" y="142" width="256" height="22" rx="5" fill="#f5f5f5" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="44" y="157" fill="#333" font-size="10">46</text>
+      <rect x="32" y="170" width="120" height="22" rx="6" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+      <text x="92" y="185" text-anchor="middle" fill="#666" font-size="10">Cancelar</text>
+      <rect x="160" y="170" width="128" height="22" rx="6" fill="#1a3a5c"/>
+      <text x="224" y="185" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">Salvar</text>
+      <rect x="32" y="196" width="120" height="16" rx="5" fill="#fff8f0" stroke="#f4a12b" stroke-width="1"/>
+      <text x="92" y="207" text-anchor="middle" fill="#f4a12b" font-size="9">📦 Arquivar</text>
+      <rect x="162" y="196" width="126" height="16" rx="5" fill="#fff0f0" stroke="#c0303a" stroke-width="1"/>
+      <text x="225" y="207" text-anchor="middle" fill="#c0303a" font-size="9">🗑️ Excluir</text>
+    </svg>`
+  },
+  {
+    title: '🗺 Mapa das Poltronas',
+    body: 'Ao entrar numa viagem você vê o <b>mapa visual</b> com todas as poltronas numeradas.<br><br>Cada card de poltrona mostra:<br>• <b>Número</b> da poltrona<br>• <b>Nome</b> do passageiro<br>• <b>Localidade</b> (parada)<br>• <b>👶</b> se houver criança de colo<br><br><b>Toque rápido</b> → marca/desmarca embarque (fica verde ✓)<br><b>Toque longo</b> → abre edição do passageiro',
+    svg: `<svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="220" fill="#f0f2f5"/>
+      <rect width="320" height="38" fill="#1a3a5c"/>
+      <text x="16" y="24" fill="#fff" font-size="11">← Voltar</text>
+      <text x="160" y="24" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold">Sexta 25/07/26</text>
+      <rect x="8" y="44" width="304" height="50" rx="8" fill="#fff"/>
+      <text x="55" y="60" text-anchor="middle" fill="#1a1a1a" font-size="11" font-weight="bold">46</text>
+      <text x="55" y="72" text-anchor="middle" fill="#888" font-size="8">Poltronas</text>
+      <text x="130" y="60" text-anchor="middle" fill="#4dd9a0" font-size="11" font-weight="bold">23</text>
+      <text x="130" y="72" text-anchor="middle" fill="#888" font-size="8">Embarcados</text>
+      <text x="205" y="60" text-anchor="middle" fill="#f4896b" font-size="11" font-weight="bold">23</text>
+      <text x="205" y="72" text-anchor="middle" fill="#888" font-size="8">Faltando</text>
+      <rect x="8" y="100" width="145" height="50" rx="8" fill="#d4f5e7" stroke="#34c97e" stroke-width="1.5"/>
+      <text x="20" y="116" fill="#1a8a52" font-size="9" font-weight="bold">01 ✓</text>
+      <text x="80" y="116" text-anchor="middle" fill="#145c38" font-size="9" font-weight="bold">JOÃO SILVA</text>
+      <text x="80" y="128" text-anchor="middle" fill="#1a8a52" font-size="8">COLONIA</text>
+      <rect x="167" y="100" width="145" height="50" rx="8" fill="#f7f8fa" stroke="#e8eaed" stroke-width="1"/>
+      <text x="179" y="116" fill="#aaa" font-size="9" font-weight="bold">02</text>
+      <text x="239" y="116" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">MARIA LIMA</text>
+      <text x="239" y="128" text-anchor="middle" fill="#888" font-size="8">AYMORÉ</text>
+      <rect x="8" y="158" width="145" height="50" rx="8" fill="#f7f8fa" stroke="#e8eaed" stroke-width="1"/>
+      <text x="20" y="174" fill="#aaa" font-size="9" font-weight="bold">03</text>
+      <text x="80" y="174" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">ANA COSTA 👶</text>
+      <text x="80" y="186" text-anchor="middle" fill="#888" font-size="8">CINCO</text>
+      <rect x="167" y="158" width="145" height="50" rx="8" fill="#f7f8fa" stroke="#e8eaed" stroke-width="1"/>
+      <text x="179" y="174" fill="#aaa" font-size="9" font-weight="bold">04</text>
+      <text x="239" y="174" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">PEDRO ROQUE</text>
+      <text x="239" y="186" text-anchor="middle" fill="#888" font-size="8">COLONIA</text>
+    </svg>`
+  },
+  {
+    title: '✅ Marcar Embarque',
+    body: '<b>Toque rápido</b> em qualquer poltrona para marcar o embarque.<br><br>• A poltrona fica <b>verde com ✓</b><br>• O <b>horário</b> é registrado automaticamente pelo relógio do celular<br>• Os contadores no topo atualizam na hora<br><br>Toque novamente para <b>desmarcar</b>.<br><br>Quando o <b>último passageiro</b> embarcar, o app toca uma melodia e vibra! 🎉',
+    svg: `<svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="180" fill="#f0f2f5"/>
+      <rect x="8" y="8" width="145" height="75" rx="10" fill="#d4f5e7" stroke="#34c97e" stroke-width="2"/>
+      <text x="24" y="28" fill="#1a8a52" font-size="11" font-weight="bold">01 ✓</text>
+      <text x="80" y="44" text-anchor="middle" fill="#145c38" font-size="11" font-weight="bold">JOÃO SILVA</text>
+      <text x="80" y="58" text-anchor="middle" fill="#1a8a52" font-size="10">COLONIA</text>
+      <text x="80" y="73" text-anchor="middle" fill="#1a8a52" font-size="18">✓</text>
+      <rect x="167" y="8" width="145" height="75" rx="10" fill="#f7f8fa" stroke="#e8eaed" stroke-width="1.5"/>
+      <text x="183" y="28" fill="#aaa" font-size="11" font-weight="bold">02</text>
+      <text x="239" y="44" text-anchor="middle" fill="#333" font-size="11" font-weight="bold">MARIA LIMA</text>
+      <text x="239" y="58" text-anchor="middle" fill="#888" font-size="10">AYMORÉ</text>
+      <text x="239" y="140" text-anchor="middle" fill="#fff" font-size="11">👆 Toque para marcar</text>
+      <path d="M239 155 L239 95" stroke="#f4a12b" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+      <defs><marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#f4a12b"/></marker></defs>
+      <rect x="40" y="105" width="240" height="22" rx="6" fill="#f4a12b"/>
+      <text x="160" y="121" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold">Toque rápido = Embarcar ✓</text>
+      <rect x="40" y="132" width="240" height="22" rx="6" fill="#1a3a5c"/>
+      <text x="160" y="148" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold">Toque longo = Editar passageiro</text>
+    </svg>`
+  },
+  {
+    title: '✏️ Cadastrar Passageiros — 2 Formas',
+    body: 'Você tem <b>2 formas</b> de cadastrar os passageiros:<br><br><b>1) Manual — Toque longo</b> (celular) ou <b>clique direito</b> (computador) em qualquer poltrona.<br>Um painel abre com os campos:<br>• Nome em maiúsculo (use <b>"-"</b> para deixar vazio)<br>• Criança de colo (opcional)<br>• Localidade/parada<br><br><b>2) Planilha Excel</b> — toque no botão <b>📊</b> no topo. Importa todos os passageiros de uma vez!',
+    svg: `<svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="220" fill="rgba(0,0,0,.5)"/>
+      <rect x="16" y="10" width="288" height="200" rx="14" fill="#fff"/>
+      <text x="160" y="34" text-anchor="middle" fill="#1a3a5c" font-size="13" font-weight="bold">✏️ Editar Poltrona 02</text>
+      <text x="32" y="54" fill="#888" font-size="9">Toque longo • Nome em maiúsculo • "-" para vazio</text>
+      <text x="32" y="70" fill="#555" font-size="10" font-weight="bold">Nome do passageiro</text>
+      <rect x="28" y="75" width="264" height="24" rx="6" fill="#f5f5f5" stroke="#1a3a5c" stroke-width="1.5"/>
+      <text x="40" y="92" fill="#333" font-size="10">MARIA SILVA</text>
+      <text x="32" y="114" fill="#555" font-size="10" font-weight="bold">👶 Criança de colo (opcional)</text>
+      <rect x="28" y="119" width="264" height="24" rx="6" fill="#f5f5f5" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="40" y="136" fill="#aaa" font-size="10">NOME DA CRIANÇA</text>
+      <text x="32" y="158" fill="#555" font-size="10" font-weight="bold">📍 Localidade</text>
+      <rect x="28" y="163" width="264" height="24" rx="6" fill="#f5f5f5" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="40" y="180" fill="#333" font-size="10">COLONIA ▼</text>
+      <rect x="28" y="193" width="124" height="18" rx="5" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+      <text x="90" y="206" text-anchor="middle" fill="#666" font-size="9">Cancelar</text>
+      <rect x="160" y="193" width="132" height="18" rx="5" fill="#1a3a5c"/>
+      <text x="226" y="206" text-anchor="middle" fill="#fff" font-size="9" font-weight="bold">Salvar</text>
+    </svg>`
+  },
+  {
+    title: '📊 Importar Excel — Estrutura da Planilha',
+    body: 'Toque em <b>📊</b> no topo para importar uma planilha Excel com todos os passageiros de uma vez.<br><br>A planilha deve ter <b>4 colunas</b> com cabeçalho na 1ª linha:<br><br>• <b>Col 1 — POLTRONA:</b> número (1, 2, 3...)<br>• <b>Col 2 — NOMES:</b> nome completo do passageiro<br>• <b>Col 3 — LOCALIDADE:</b> parada de embarque<br>• <b>Col 4 — COLO:</b> nome da criança (opcional)<br><br>💡 Se a localidade estiver vazia, vai para <b>VAZIO</b> automaticamente.',
+    svg: `<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="200" fill="#f0f2f5"/>
+      <rect x="8" y="8" width="304" height="184" rx="10" fill="#fff" stroke="#e0e0e0" stroke-width="1"/>
+      <rect x="8" y="8" width="304" height="28" rx="10" fill="#1a7a4a"/>
+      <rect x="8" y="30" width="304" height="6" fill="#1a7a4a"/>
+      <text x="160" y="27" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold">📊 Planilha Excel</text>
+      <line x1="84" y1="36" x2="84" y2="192" stroke="#e0e0e0" stroke-width="1"/>
+      <line x1="176" y1="36" x2="176" y2="192" stroke="#e0e0e0" stroke-width="1"/>
+      <line x1="248" y1="36" x2="248" y2="192" stroke="#e0e0e0" stroke-width="1"/>
+      <rect x="8" y="36" width="304" height="20" fill="#e8f5e9"/>
+      <text x="44" y="50" text-anchor="middle" fill="#1a7a4a" font-size="9" font-weight="bold">POLTRONA</text>
+      <text x="128" y="50" text-anchor="middle" fill="#1a7a4a" font-size="9" font-weight="bold">NOMES</text>
+      <text x="210" y="50" text-anchor="middle" fill="#1a7a4a" font-size="9" font-weight="bold">LOCALIDADE</text>
+      <text x="282" y="50" text-anchor="middle" fill="#1a7a4a" font-size="9" font-weight="bold">COLO</text>
+      <line x1="8" y1="56" x2="312" y2="56" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="44" y="70" text-anchor="middle" fill="#333" font-size="9">1</text>
+      <text x="128" y="70" text-anchor="middle" fill="#333" font-size="9">JOÃO SILVA</text>
+      <text x="210" y="70" text-anchor="middle" fill="#333" font-size="9">COLONIA</text>
+      <text x="282" y="70" text-anchor="middle" fill="#aaa" font-size="9">—</text>
+      <line x1="8" y1="76" x2="312" y2="76" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="44" y="90" text-anchor="middle" fill="#333" font-size="9">2</text>
+      <text x="128" y="90" text-anchor="middle" fill="#333" font-size="9">MARIA LIMA</text>
+      <text x="210" y="90" text-anchor="middle" fill="#333" font-size="9">AYMORÉ</text>
+      <text x="282" y="90" text-anchor="middle" fill="#333" font-size="9">FERNANDA</text>
+      <line x1="8" y1="96" x2="312" y2="96" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="44" y="110" text-anchor="middle" fill="#333" font-size="9">3</text>
+      <text x="128" y="110" text-anchor="middle" fill="#333" font-size="9">PEDRO ROQUE</text>
+      <text x="210" y="110" text-anchor="middle" fill="#333" font-size="9">CINCO</text>
+      <text x="282" y="110" text-anchor="middle" fill="#aaa" font-size="9">—</text>
+      <line x1="8" y1="116" x2="312" y2="116" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="44" y="130" text-anchor="middle" fill="#333" font-size="9">4</text>
+      <text x="128" y="130" text-anchor="middle" fill="#333" font-size="9">ANA COSTA</text>
+      <text x="210" y="130" text-anchor="middle" fill="#333" font-size="9">N. HORIZONTE</text>
+      <text x="282" y="130" text-anchor="middle" fill="#aaa" font-size="9">—</text>
+      <text x="160" y="158" text-anchor="middle" fill="#888" font-size="9">Col 1: Poltrona • Col 2: Nome • Col 3: Local • Col 4: Colo</text>
+      <rect x="60" y="166" width="200" height="22" rx="6" fill="#1a3a5c"/>
+      <text x="160" y="181" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">📊 Toque para importar</text>
+    </svg>`
+  },
+  {
+    title: '📍 Filtros de Localidade',
+    body: 'Os botões abaixo da busca permitem <b>filtrar por parada de embarque</b>.<br><br>• <b>🗺 Todos</b> — mostra todas as poltronas<br>• <b>💺 Vazio</b> — poltronas disponíveis (aparece só se houver vazias)<br>• Demais botões — cada localidade cadastrada<br><br>Os contadores e barra de progresso atualizam conforme o filtro.<br><br>💡 <b>Segure e arraste</b> um botão para reordenar!',
+    svg: `<svg viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="160" fill="#f0f2f5"/>
+      <rect x="8" y="8" width="304" height="30" rx="8" fill="#fff" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="30" y="27" fill="#aaa" font-size="10">🔎 Localizar passageiro...</text>
+      <rect x="8" y="46" width="58" height="24" rx="12" fill="#1a3a5c"/>
+      <text x="37" y="62" text-anchor="middle" fill="#fff" font-size="9" font-weight="bold">🗺 Todos</text>
+      <rect x="72" y="46" width="55" height="24" rx="12" fill="#f7f8fa" stroke="#c0c8d4" stroke-width="1.5"/>
+      <text x="99" y="62" text-anchor="middle" fill="#444" font-size="9">💺 Vazio</text>
+      <rect x="133" y="46" width="60" height="24" rx="12" fill="#f7f8fa" stroke="#c0c8d4" stroke-width="1.5"/>
+      <text x="163" y="62" text-anchor="middle" fill="#444" font-size="9">📍 Colônia</text>
+      <rect x="199" y="46" width="55" height="24" rx="12" fill="#f7f8fa" stroke="#c0c8d4" stroke-width="1.5"/>
+      <text x="226" y="62" text-anchor="middle" fill="#444" font-size="9">📍 Cinco</text>
+      <rect x="260" y="46" width="55" height="24" rx="12" fill="#f7f8fa" stroke="#c0c8d4" stroke-width="1.5"/>
+      <text x="287" y="62" text-anchor="middle" fill="#444" font-size="9">📍 Aymoré</text>
+      <rect x="8" y="80" width="145" height="60" rx="8" fill="#d4f5e7" stroke="#34c97e" stroke-width="1.5"/>
+      <text x="80" y="100" text-anchor="middle" fill="#145c38" font-size="10" font-weight="bold">01 ✓ JOÃO SILVA</text>
+      <text x="80" y="115" text-anchor="middle" fill="#1a8a52" font-size="9">COLONIA</text>
+      <rect x="167" y="80" width="145" height="60" rx="8" fill="#f7f8fa" stroke="#e8eaed" stroke-width="1"/>
+      <text x="239" y="100" text-anchor="middle" fill="#333" font-size="10" font-weight="bold">02 MARIA LIMA</text>
+      <text x="239" y="115" text-anchor="middle" fill="#888" font-size="9">COLONIA</text>
+      <text x="160" y="152" text-anchor="middle" fill="#888" font-size="9">Segure e arraste para reordenar ↔</text>
+    </svg>`
+  },
+  {
+    title: '🔎 Busca de Passageiro',
+    body: 'Use o campo de busca no topo para <b>encontrar qualquer passageiro</b> instantaneamente.<br><br>• Busca por <b>nome do passageiro</b><br>• Busca pelo <b>nome da criança de colo</b><br>• Funciona <b>sem acento</b> — "JOAO" encontra "JOÃO", "ELISANGELA" encontra "ELISÂNGELA"<br>• O assento encontrado fica destacado em <b>azul</b><br>• Toque no <b>✕</b> para limpar a busca',
+    svg: `<svg viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="160" fill="#f0f2f5"/>
+      <rect x="8" y="8" width="304" height="32" rx="8" fill="#fff" stroke="#3b8fd4" stroke-width="2"/>
+      <text x="28" y="28" fill="#333" font-size="11">🔎 JOAO</text>
+      <text x="298" y="28" text-anchor="middle" fill="#aaa" font-size="14">✕</text>
+      <rect x="8" y="48" width="304" height="22" rx="6" fill="#e8f4fd" stroke="#3b8fd4" stroke-width="1"/>
+      <text x="16" y="63" fill="#1a5276" font-size="9">Assento 05: JOÃO SILVA (COLONIA)</text>
+      <rect x="8" y="78" width="145" height="70" rx="8" fill="#f7f8fa" stroke="#e8eaed" stroke-width="1"/>
+      <text x="80" y="98" text-anchor="middle" fill="#333" font-size="10">01 ANA COSTA</text>
+      <text x="80" y="113" text-anchor="middle" fill="#888" font-size="9">AYMORÉ</text>
+      <rect x="167" y="78" width="145" height="70" rx="10" fill="#e8f4fd" stroke="#3b8fd4" stroke-width="2.5"/>
+      <text x="239" y="98" text-anchor="middle" fill="#1a5276" font-size="10" font-weight="bold">05 JOÃO SILVA</text>
+      <text x="239" y="113" text-anchor="middle" fill="#3b8fd4" font-size="9">COLONIA</text>
+      <text x="239" y="130" text-anchor="middle" fill="#3b8fd4" font-size="16">👆</text>
+    </svg>`
+  },
+  {
+    title: '📊 Barra de Progresso e Contadores',
+    body: 'No topo da tela de embarque você vê os <b>contadores</b> e a <b>barra de progresso</b>:<br><br>• <b>Poltronas</b> — total de lugares<br>• <b>Embarcados</b> — já marcados com ✓<br>• <b>Faltando</b> — ainda aguardando<br>• <b>👶 No colo</b> — aparece se houver crianças<br><br>A barra muda de cor: 🟡 início → 🟢 avançando → 🟢 completo<br><br>Quando todos embarcarem: <b>melodia + vibração!</b> 🎉',
+    svg: `<svg viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="160" fill="#1a3a5c"/>
+      <rect x="8" y="8" width="68" height="50" rx="8" fill="rgba(255,255,255,.12)"/>
+      <text x="42" y="30" text-anchor="middle" fill="#fff" font-size="18" font-weight="bold">46</text>
+      <text x="42" y="46" text-anchor="middle" fill="#aaa" font-size="9">Poltronas</text>
+      <rect x="84" y="8" width="68" height="50" rx="8" fill="rgba(255,255,255,.12)"/>
+      <text x="118" y="30" text-anchor="middle" fill="#4dd9a0" font-size="18" font-weight="bold">38</text>
+      <text x="118" y="46" text-anchor="middle" fill="#aaa" font-size="9">Embarcados</text>
+      <rect x="160" y="8" width="68" height="50" rx="8" fill="rgba(255,255,255,.12)"/>
+      <text x="194" y="30" text-anchor="middle" fill="#f4896b" font-size="18" font-weight="bold">8</text>
+      <text x="194" y="46" text-anchor="middle" fill="#aaa" font-size="9">Faltando</text>
+      <rect x="236" y="8" width="76" height="50" rx="8" fill="rgba(255,255,255,.12)"/>
+      <text x="274" y="30" text-anchor="middle" fill="#f4a12b" font-size="18" font-weight="bold">1/2</text>
+      <text x="274" y="46" text-anchor="middle" fill="#aaa" font-size="9">👶 No colo</text>
+      <text x="16" y="80" fill="#aaa" font-size="9">Progresso do embarque</text>
+      <text x="304" y="80" text-anchor="end" fill="#fff" font-size="9" font-weight="bold">83%</text>
+      <rect x="8" y="86" width="304" height="12" rx="6" fill="rgba(255,255,255,.15)"/>
+      <rect x="8" y="86" width="252" height="12" rx="6" fill="url(#prog)"/>
+      <defs><linearGradient id="prog" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#4dd9a0"/><stop offset="100%" stop-color="#2ab87a"/></linearGradient></defs>
+      <text x="160" y="130" text-anchor="middle" fill="#fff" font-size="11">👥 Total de pessoas: 48</text>
+      <text x="160" y="150" text-anchor="middle" fill="#aaa" font-size="9">(46 poltronas + 2 crianças de colo)</text>
+    </svg>`
+  },
+  {
+    title: '⇄ Reorganizar Poltronas',
+    body: 'Toque em <b>⇄</b> no topo para ativar o modo de reorganização.<br><br><b>Como usar:</b><br>1. Toque na poltrona de <b>origem</b> → fica destacada em laranja<br>2. Toque na poltrona de <b>destino</b><br>3. Os passageiros <b>trocam de lugar</b> — nome, colo, localidade, tick e horário vão juntos<br><br>• Toque em <b>⇄</b> novamente para sair<br>• <b>⚠️</b> Fica desativado quando não está na ordem padrão por poltrona',
+    svg: `<svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="180" fill="#f0f2f5"/>
+      <rect x="8" y="8" width="145" height="70" rx="10" fill="#fff3e0" stroke="#f4a12b" stroke-width="2.5"/>
+      <text x="24" y="30" fill="#f4a12b" font-size="10" font-weight="bold">05 — ORIGEM</text>
+      <text x="80" y="48" text-anchor="middle" fill="#e65100" font-size="11" font-weight="bold">MARIA SILVA</text>
+      <text x="80" y="63" text-anchor="middle" fill="#f4a12b" font-size="9">COLONIA</text>
+      <rect x="167" y="8" width="145" height="70" rx="10" fill="#e8f4fd" stroke="#3b8fd4" stroke-width="2" stroke-dasharray="5,3"/>
+      <text x="183" y="30" fill="#3b8fd4" font-size="10" font-weight="bold">12 — DESTINO</text>
+      <text x="239" y="48" text-anchor="middle" fill="#1a5276" font-size="11" font-weight="bold">JOÃO ROQUE</text>
+      <text x="239" y="63" text-anchor="middle" fill="#3b8fd4" font-size="9">AYMORÉ</text>
+      <text x="160" y="105" text-anchor="middle" fill="#888" font-size="20">⇄</text>
+      <rect x="8" y="120" width="145" height="50" rx="10" fill="#e8f4fd" stroke="#3b8fd4" stroke-width="1.5"/>
+      <text x="80" y="140" text-anchor="middle" fill="#1a5276" font-size="10" font-weight="bold">05 JOÃO ROQUE</text>
+      <text x="80" y="155" text-anchor="middle" fill="#3b8fd4" font-size="9">AYMORÉ</text>
+      <rect x="167" y="120" width="145" height="50" rx="10" fill="#fff3e0" stroke="#f4a12b" stroke-width="1.5"/>
+      <text x="239" y="140" text-anchor="middle" fill="#e65100" font-size="10" font-weight="bold">12 MARIA SILVA</text>
+      <text x="239" y="155" text-anchor="middle" fill="#f4a12b" font-size="9">COLONIA</text>
+    </svg>`
+  },
+  {
+    title: '⇅ Classificar Poltronas',
+    body: 'Toque em <b>⇅</b> para escolher como as poltronas aparecem na tela:<br><br>• <b>🔢 Por poltrona</b> — ordem 1, 2, 3... (padrão)<br>• <b>🔤 Alfabética por nome</b> — A, B, C...<br>• <b>📍 Por localidade</b> — agrupa por parada (segue a ordem dos filtros)<br><br>⚠️ O botão ⇄ de reorganizar fica desativado quando não está na ordem padrão.',
+    svg: `<svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="180" fill="rgba(0,0,0,.5)"/>
+      <rect x="60" y="20" width="200" height="140" rx="12" fill="#fff"/>
+      <rect x="60" y="20" width="200" height="30" rx="12" fill="#f5f5f5"/>
+      <rect x="60" y="44" width="200" height="6" fill="#f5f5f5"/>
+      <text x="160" y="40" text-anchor="middle" fill="#333" font-size="11" font-weight="bold">Classificar</text>
+      <rect x="68" y="58" width="184" height="28" rx="6" fill="#e8f4fd"/>
+      <text x="84" y="76" fill="#1a3a5c" font-size="11" font-weight="bold">🔢 Por poltrona</text>
+      <text x="238" y="76" text-anchor="end" fill="#1a3a5c" font-size="12">✓</text>
+      <line x1="68" y1="88" x2="252" y2="88" stroke="#f0f0f0" stroke-width="1"/>
+      <rect x="68" y="92" width="184" height="28" rx="6" fill="#fff"/>
+      <text x="84" y="110" fill="#333" font-size="11">🔤 Ordem alfabética</text>
+      <line x1="68" y1="122" x2="252" y2="122" stroke="#f0f0f0" stroke-width="1"/>
+      <rect x="68" y="126" width="184" height="28" rx="6" fill="#fff"/>
+      <text x="84" y="144" fill="#333" font-size="11">📍 Por localidade</text>
+    </svg>`
+  },
+  {
+    title: '📋 Lista de Faltosos',
+    body: 'Toque em <b>📋 Faltosos</b> para ver rapidamente quem <b>ainda não embarcou</b>.<br><br>A lista mostra para cada faltoso:<br>• Número da poltrona<br>• Nome completo<br>• Localidade/parada<br>• Criança de colo, se houver<br><br>Atualiza em tempo real conforme você marca os embarques.',
+    svg: `<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="200" fill="rgba(0,0,0,.5)"/>
+      <rect x="0" y="80" width="320" height="120" rx="18" fill="#fff"/>
+      <rect x="0" y="80" width="320" height="18" fill="#fff"/>
+      <text x="16" y="102" fill="#1a1a1a" font-size="13" font-weight="bold">❌ Faltosos</text>
+      <rect x="190" y="88" width="40" height="16" rx="8" fill="#f4a12b"/>
+      <text x="210" y="100" text-anchor="middle" fill="#fff" font-size="9" font-weight="bold">8</text>
+      <text x="298" y="100" text-anchor="middle" fill="#aaa" font-size="18">×</text>
+      <line x1="0" y1="108" x2="320" y2="108" stroke="#f0f0f0" stroke-width="1"/>
+      <rect x="16" y="116" width="30" height="30" rx="6" fill="#f0f0f0"/>
+      <text x="31" y="135" text-anchor="middle" fill="#555" font-size="9" font-weight="bold">05</text>
+      <text x="60" y="128" fill="#1a1a1a" font-size="11" font-weight="bold">MARIA SILVA</text>
+      <text x="60" y="142" fill="#888" font-size="9">📍 COLONIA</text>
+      <line x1="16" y1="152" x2="304" y2="152" stroke="#f5f5f5" stroke-width="1"/>
+      <rect x="16" y="158" width="30" height="30" rx="6" fill="#f0f0f0"/>
+      <text x="31" y="177" text-anchor="middle" fill="#555" font-size="9" font-weight="bold">12</text>
+      <text x="60" y="170" fill="#1a1a1a" font-size="11" font-weight="bold">JOÃO ROQUE + 👶</text>
+      <text x="60" y="184" fill="#888" font-size="9">📍 AYMORÉ</text>
+    </svg>`
+  },
+  {
+    title: '📝 Campos de Informações',
+    body: 'No final da tela de passageiros há <b>3 campos de texto</b> para anotar informações importantes:<br><br>• <b>👤 Informações do Motorista</b> — nome, telefone<br>• <b>🚌 Informações do Veículo</b> — modelo, placa<br>• <b>📝 Outras Informações</b> — ocorrências, recados, passageiros faltosos<br><br>Tudo é <b>salvo automaticamente</b> e aparece nos relatórios PDF e WhatsApp.',
+    svg: `<svg viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="190" fill="#f0f2f5"/>
+      <text x="16" y="22" fill="#555" font-size="10" font-weight="bold">👤 Informações do Motorista</text>
+      <rect x="8" y="28" width="304" height="40" rx="8" fill="#fff" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="20" y="45" fill="#333" font-size="10">João Carlos</text>
+      <text x="20" y="60" fill="#888" font-size="10">(11) 99999-0000</text>
+      <text x="16" y="84" fill="#555" font-size="10" font-weight="bold">🚌 Informações do Veículo</text>
+      <rect x="8" y="90" width="304" height="40" rx="8" fill="#fff" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="20" y="107" fill="#333" font-size="10">Ônibus Marcopolo - ABC-1234</text>
+      <text x="20" y="122" fill="#888" font-size="10">46 lugares</text>
+      <text x="16" y="146" fill="#555" font-size="10" font-weight="bold">📝 Outras Informações</text>
+      <rect x="8" y="152" width="304" height="32" rx="8" fill="#fff" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="20" y="168" fill="#333" font-size="10">Passageiro 05 avisou atraso de</text>
+      <text x="20" y="180" fill="#333" font-size="10">10 minutos.</text>
+    </svg>`
+  },
+  {
+    title: '📄 Relatório PDF — Lista',
+    body: 'Toque em <b>📄 PDF</b> e escolha <b>📋 Lista</b> para gerar um relatório completo.<br><br>O relatório inclui:<br>• Título e data da viagem<br>• Resumo (total, embarcados, faltando, colo)<br>• <b>Tabela de embarcados</b> com horário de cada um<br>• <b>Tabela de faltosos</b><br>• <b>Crianças de colo</b> (se houver)<br>• Informações do motorista, veículo e observações<br><br>O arquivo é salvo como <b>Embarque_DD-MM-AA.pdf</b>',
+    svg: `<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="200" fill="#fff"/>
+      <text x="16" y="24" fill="#1a3a5c" font-size="14" font-weight="bold">🚌 Excursão Ilha Grande</text>
+      <text x="16" y="38" fill="#1a3a5c" font-size="12" font-weight="bold">Sexta 25/07/26</text>
+      <text x="16" y="52" fill="#888" font-size="9">Gerado em 25/07/2026 às 07:30</text>
+      <rect x="16" y="60" width="50" height="28" rx="5" fill="#f5f5f5"/>
+      <text x="41" y="72" text-anchor="middle" fill="#333" font-size="11" font-weight="bold">46</text>
+      <text x="41" y="83" text-anchor="middle" fill="#666" font-size="8">Total</text>
+      <rect x="72" y="60" width="50" height="28" rx="5" fill="#d4f5e7"/>
+      <text x="97" y="72" text-anchor="middle" fill="#1a8a52" font-size="11" font-weight="bold">44</text>
+      <text x="97" y="83" text-anchor="middle" fill="#666" font-size="8">Embarcados</text>
+      <rect x="128" y="60" width="50" height="28" rx="5" fill="#fce8e6"/>
+      <text x="153" y="72" text-anchor="middle" fill="#c0303a" font-size="11" font-weight="bold">2</text>
+      <text x="153" y="83" text-anchor="middle" fill="#666" font-size="8">Faltando</text>
+      <text x="16" y="104" fill="#333" font-size="10" font-weight="bold">✅ Passageiros Embarcados (44)</text>
+      <rect x="16" y="108" width="288" height="16" rx="2" fill="#f0f0f0"/>
+      <text x="20" y="120" fill="#555" font-size="8" font-weight="bold">Nº  NOME              LOCAL      HORÁRIO</text>
+      <line x1="16" y1="124" x2="304" y2="124" stroke="#ddd" stroke-width="1"/>
+      <text x="20" y="134" fill="#333" font-size="8">01  JOÃO SILVA        COLONIA    07:15</text>
+      <line x1="16" y1="138" x2="304" y2="138" stroke="#ddd" stroke-width="1"/>
+      <text x="20" y="148" fill="#333" font-size="8">02  MARIA LIMA        AYMORÉ     07:18</text>
+      <line x1="16" y1="152" x2="304" y2="152" stroke="#ddd" stroke-width="1"/>
+      <text x="20" y="162" fill="#888" font-size="8">...</text>
+      <text x="16" y="180" fill="#333" font-size="10" font-weight="bold">❌ Passageiros Faltosos (2)</text>
+    </svg>`
+  },
+  {
+    title: '🗺️ Relatório PDF — Mapa Visual',
+    body: 'Toque em <b>📄 PDF</b> e escolha <b>🗺️ Mapa Visual</b> para ver o layout dos assentos.<br><br>Cada card de assento tem a <b>cor da sua localidade</b>, tornando fácil identificar passageiros por parada.<br><br>No topo há uma <b>legenda colorida</b> com cada localidade.<br><br>Ideal para ter uma visão rápida da ocupação do veículo!',
+    svg: `<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="200" fill="#fff"/>
+      <text x="16" y="20" fill="#1a3a5c" font-size="12" font-weight="bold">🚌 Excursão Ilha Grande</text>
+      <text x="16" y="33" fill="#1a3a5c" font-size="10" font-weight="bold">Sexta 25/07/26</text>
+      <rect x="200" y="8" width="100" height="14" rx="3" fill="#FFD600"/>
+      <text x="250" y="19" text-anchor="middle" fill="#111" font-size="8" font-weight="bold">COLONIA — 10</text>
+      <rect x="200" y="25" width="100" height="14" rx="3" fill="#00BCD4"/>
+      <text x="250" y="36" text-anchor="middle" fill="#fff" font-size="8" font-weight="bold">AYMORÉ — 7</text>
+      <rect x="200" y="42" width="100" height="14" rx="3" fill="#8D6E63"/>
+      <text x="250" y="53" text-anchor="middle" fill="#fff" font-size="8" font-weight="bold">CINCO — 12</text>
+      <text x="160" y="72" text-anchor="middle" fill="#888" font-size="8">⊙ MOTORISTA / FRENTE DO VEÍCULO</text>
+      <rect x="8" y="80" width="68" height="44" rx="5" fill="#FFD600" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="42" y="96" text-anchor="middle" fill="#111" font-size="8" font-weight="bold">01 ✓</text>
+      <text x="42" y="108" text-anchor="middle" fill="#111" font-size="8">JOÃO</text>
+      <text x="42" y="118" text-anchor="middle" fill="#333" font-size="7">COLONIA</text>
+      <rect x="82" y="80" width="68" height="44" rx="5" fill="#FFD600" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="116" y="96" text-anchor="middle" fill="#111" font-size="8" font-weight="bold">02</text>
+      <text x="116" y="108" text-anchor="middle" fill="#111" font-size="8">MARIA</text>
+      <text x="116" y="118" text-anchor="middle" fill="#333" font-size="7">COLONIA</text>
+      <line x1="158" y1="80" x2="158" y2="124" stroke="#ccc" stroke-dasharray="3,2" stroke-width="1"/>
+      <rect x="166" y="80" width="68" height="44" rx="5" fill="#00BCD4" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="200" y="96" text-anchor="middle" fill="#fff" font-size="8" font-weight="bold">03 ✓</text>
+      <text x="200" y="108" text-anchor="middle" fill="#fff" font-size="8">ANA 👶</text>
+      <text x="200" y="118" text-anchor="middle" fill="#e0f7fa" font-size="7">AYMORÉ</text>
+      <rect x="240" y="80" width="72" height="44" rx="5" fill="#8D6E63" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="276" y="96" text-anchor="middle" fill="#fff" font-size="8" font-weight="bold">04</text>
+      <text x="276" y="108" text-anchor="middle" fill="#fff" font-size="8">PEDRO</text>
+      <text x="276" y="118" text-anchor="middle" fill="#e0d5cc" font-size="7">CINCO</text>
+      <rect x="8" y="130" width="68" height="44" rx="5" fill="#f0f0f0" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="42" y="146" text-anchor="middle" fill="#aaa" font-size="8">05</text>
+      <text x="42" y="160" text-anchor="middle" fill="#aaa" font-size="8">—</text>
+      <text x="42" y="170" text-anchor="middle" fill="#bbb" font-size="7">VAZIO</text>
+    </svg>`
+  },
+  {
+    title: '📲 Compartilhar pelo WhatsApp',
+    body: 'Toque em <b>📲 WhatsApp</b> para enviar o relatório diretamente.<br><br>O relatório inclui:<br>• Resumo (total, embarcados, faltando, colo)<br>• Lista de embarcados com horário<br>• Lista de faltosos por localidade<br>• Crianças de colo (se houver)<br>• Informações do motorista, veículo e observações<br><br>Abre o WhatsApp para você escolher o <b>contato ou grupo</b>.',
+    svg: `<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="200" fill="#e5ddd5"/>
+      <rect x="8" y="8" width="220" height="180" rx="12" fill="#fff"/>
+      <text x="20" y="28" fill="#1a3a5c" font-size="10" font-weight="bold">🚌 *RELATÓRIO DE EMBARQUE*</text>
+      <text x="20" y="42" fill="#555" font-size="9">📅 Excursão Ilha Grande — Sex 25/07/26</text>
+      <text x="20" y="56" fill="#555" font-size="9">🕐 Gerado às 07:30 de 25/07/2026</text>
+      <line x1="20" y1="62" x2="220" y2="62" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="20" y="76" fill="#333" font-size="9" font-weight="bold">📊 *RESUMO*</text>
+      <text x="20" y="89" fill="#555" font-size="9">▶ Poltronas: 46</text>
+      <text x="20" y="102" fill="#1a8a52" font-size="9">✅ Embarcados: 44</text>
+      <text x="20" y="115" fill="#c0303a" font-size="9">❌ Faltando: 2</text>
+      <line x1="20" y1="121" x2="220" y2="121" stroke="#e0e0e0" stroke-width="1"/>
+      <text x="20" y="135" fill="#333" font-size="9" font-weight="bold">✅ *EMBARCADOS*</text>
+      <text x="20" y="148" fill="#555" font-size="9">01 - JOÃO SILVA (COLONIA) 07:15</text>
+      <text x="20" y="161" fill="#555" font-size="9">02 - MARIA LIMA (AYMORÉ) 07:18</text>
+      <text x="20" y="174" fill="#888" font-size="9">...</text>
+      <rect x="240" y="8" width="72" height="40" rx="8" fill="#25D366"/>
+      <text x="276" y="32" text-anchor="middle" fill="#fff" font-size="20">📲</text>
+      <text x="276" y="66" text-anchor="middle" fill="#555" font-size="9">Toque em</text>
+      <text x="276" y="79" text-anchor="middle" fill="#25D366" font-size="9" font-weight="bold">WhatsApp</text>
+    </svg>`
+  },
+  {
+    title: '⚙️ Backup e Configurações',
+    body: 'Toque em <b>⚙️</b> na tela inicial para acessar o painel de backup:<br><br>• <b>📤 Exportar Backup</b> — salva um arquivo <code>.json</code> com TODO o progresso (embarques, horários, nomes, observações, histórico) de todas as viagens<br><br>• <b>📥 Restaurar Backup</b> — carrega o arquivo em outro celular ou navegador<br><br>💡 Ideal para <b>trocar de celular</b> ou compartilhar o andamento com outra pessoa!',
+    svg: `<svg viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="190" fill="rgba(0,0,0,.6)"/>
+      <rect x="20" y="20" width="280" height="150" rx="16" fill="#fff"/>
+      <text x="160" y="48" text-anchor="middle" fill="#1a3a5c" font-size="14" font-weight="bold">⚙️ Configurações</text>
+      <text x="160" y="63" text-anchor="middle" fill="#888" font-size="10">Backup do progresso de embarque</text>
+      <line x1="36" y1="70" x2="284" y2="70" stroke="#f0f0f0" stroke-width="1"/>
+      <text x="36" y="86" fill="#333" font-size="11" font-weight="bold">📤 Exportar Backup</text>
+      <text x="36" y="100" fill="#888" font-size="9">Salva arquivo com todo o progresso</text>
+      <rect x="36" y="107" width="248" height="22" rx="6" fill="#1a3a5c"/>
+      <text x="160" y="122" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">📤 Exportar Backup</text>
+      <line x1="36" y1="134" x2="284" y2="134" stroke="#f0f0f0" stroke-width="1"/>
+      <text x="36" y="150" fill="#333" font-size="11" font-weight="bold">📥 Restaurar Backup</text>
+      <text x="36" y="164" fill="#888" font-size="9">Carrega arquivo de outro celular</text>
+    </svg>`
+  },
+  {
+    title: '📂 Histórico de Viagens',
+    body: 'Toque em <b>📂</b> na tela inicial para ver o <b>histórico de viagens arquivadas</b>.<br><br>Para <b>arquivar</b> uma viagem: toque longo no card → <b>📦 Arquivar viagem</b>.<br><br>No histórico você pode:<br>• Ver resumo de cada viagem (embarcados, faltosos, data)<br>• <b>↩️ Restaurar</b> — volta para as viagens ativas com todos os dados<br>• <b>🗑️ Excluir</b> — remove definitivamente',
+    svg: `<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="200" fill="rgba(0,0,0,.5)"/>
+      <rect x="0" y="60" width="320" height="140" rx="18" fill="#fff"/>
+      <rect x="0" y="60" width="320" height="18" fill="#fff"/>
+      <text x="16" y="84" fill="#1a1a1a" font-size="14" font-weight="bold">📂 Histórico de Viagens</text>
+      <text x="290" y="84" text-anchor="middle" fill="#aaa" font-size="20">×</text>
+      <line x1="0" y1="92" x2="320" y2="92" stroke="#f0f0f0" stroke-width="1"/>
+      <rect x="8" y="100" width="304" height="45" rx="8" fill="#f7f8fa"/>
+      <text x="20" y="116" fill="#1a1a1a" font-size="11" font-weight="bold">🚌 Excursão Ilha Grande — Sex 25/07</text>
+      <text x="20" y="130" fill="#888" font-size="9">✅ 44/46 embarcados · Arquivado em 25/07/26</text>
+      <rect x="200" y="106" width="50" height="22" rx="6" fill="#1a3a5c"/>
+      <text x="225" y="121" text-anchor="middle" fill="#fff" font-size="9" font-weight="bold">↩️ Restaurar</text>
+      <rect x="256" y="106" width="46" height="22" rx="6" fill="#fff0f0" stroke="#c0303a" stroke-width="1"/>
+      <text x="279" y="121" text-anchor="middle" fill="#c0303a" font-size="9">🗑️</text>
+      <line x1="8" y1="150" x2="312" y2="150" stroke="#f0f0f0" stroke-width="1"/>
+      <rect x="8" y="158" width="304" height="36" rx="8" fill="#f7f8fa"/>
+      <text x="20" y="174" fill="#1a1a1a" font-size="11" font-weight="bold">🚌 Assembleia Regional — Dom 20/07</text>
+      <text x="20" y="186" fill="#888" font-size="9">✅ 46/46 embarcados · Arquivado em 20/07/26</text>
+    </svg>`
+  },
+  {
+    title: '🎉 Tutorial Concluído!',
+    body: 'Parabéns! Você conheceu todas as funções do app! 🚌<br><br><b>Resumo rápido:</b><br>• <b>➕</b> Criar viagem → tela inicial<br>• <b>✏️</b> Cadastrar passageiros → toque longo ou 📊 Excel<br>• <b>✅</b> Marcar embarque → toque rápido<br>• <b>📄</b> Relatórios → PDF lista ou mapa visual<br>• <b>📲</b> Compartilhar → WhatsApp<br>• <b>⚙️</b> Backup → exportar/restaurar<br>• <b>📂</b> Histórico → viagens arquivadas<br><br>Boa viagem! 🚌',
+    svg: `<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" width="100%">
+      <rect width="320" height="200" fill="#0f1923"/>
+      <text x="160" y="60" text-anchor="middle" font-size="48">🎉</text>
+      <text x="160" y="95" text-anchor="middle" fill="#fff" font-size="18" font-weight="bold">Tudo pronto!</text>
+      <text x="160" y="115" text-anchor="middle" fill="#aaa" font-size="12">Você conheceu todas as funções</text>
+      <rect x="40" y="130" width="240" height="36" rx="10" fill="#1a3a5c"/>
+      <text x="160" y="153" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">🚌 Boa viagem!</text>
+      <text x="160" y="185" text-anchor="middle" fill="#555" font-size="10">Toque em ❓ a qualquer momento para rever</text>
+    </svg>`
+  }
+];
+
+function startTutorial(){
+  tutorialStep = 0;
+  document.getElementById('tutorial-screen').style.display = 'flex';
+  renderTutorialStep();
+}
+
+function endTutorial(){
+  document.getElementById('tutorial-screen').style.display = 'none';
+  try{ localStorage.setItem('tutorial_done','1'); }catch(e){}
+}
+
+function tutorialNext(){
+  if(tutorialStep < TUTORIAL_STEPS.length - 1){
+    tutorialStep++;
+    renderTutorialStep();
+  } else {
+    endTutorial();
+  }
+}
+
+function tutorialPrev(){
+  if(tutorialStep > 0){
+    tutorialStep--;
+    renderTutorialStep();
+  }
+}
+
+function renderTutorialStep(){
+  const step = TUTORIAL_STEPS[tutorialStep];
+  const total = TUTORIAL_STEPS.length;
+  const isLast = tutorialStep === total - 1;
+  const isFirst = tutorialStep === 0;
+
+  document.getElementById('t-step-label').textContent = `${tutorialStep+1} / ${total}`;
+  document.getElementById('t-title').textContent = step.title;
+  document.getElementById('t-body').innerHTML = step.body;
+  document.getElementById('t-illustration').innerHTML = step.svg;
+  document.getElementById('t-prev').style.opacity = isFirst ? '0.3' : '1';
+  document.getElementById('t-prev').style.pointerEvents = isFirst ? 'none' : 'auto';
+  document.getElementById('t-next').style.display = isLast ? 'none' : 'block';
+  document.getElementById('t-finish').style.display = isLast ? 'block' : 'none';
+
+  // Dots navigation
+  const dots = document.getElementById('t-dots');
+  dots.innerHTML = '';
+  for(let i=0; i<total; i++){
+    const d = document.createElement('div');
+    d.style.cssText = `width:${i===tutorialStep?16:6}px;height:6px;border-radius:3px;background:${i===tutorialStep?'#f4a12b':'rgba(255,255,255,.3)'};transition:all .2s;cursor:pointer`;
+    d.onclick = ()=>{ tutorialStep=i; renderTutorialStep(); };
+    dots.appendChild(d);
+  }
+}
+
+
 // ===== INIT =====
 try{
   const saved = localStorage.getItem('days_structure');
@@ -2479,7 +3090,6 @@ if ('serviceWorker' in navigator) {
     });
 }
 </script>
-
 
 
 </body>
