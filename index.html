@@ -438,6 +438,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   body.dark #tutorial-box .t-skip{color:#555}
 </style>
 
+
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1976d2">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2048,7 +2049,36 @@ function parseLabelDate(label){
 }
 
 function sortDays(){
+  const keys=['chk','hor','names','colos','locs','loccolors','obs','motorista','veiculo'];
+
+  // 1. Save all current localStorage data mapped by label+title (unique identifier)
+  const dataByKey={};
+  DAYS.forEach((day,i)=>{
+    const key=day.label+'||'+(day.title||'');
+    dataByKey[key]={};
+    keys.forEach(k=>{
+      try{ const v=localStorage.getItem('day'+i+'_'+k); if(v) dataByKey[key][k]=v; }catch(e){}
+    });
+  });
+
+  // 2. Sort DAYS array by date
   DAYS.sort((a,b)=>parseLabelDate(a.label)-parseLabelDate(b.label));
+
+  // 3. Clear all old localStorage day keys
+  for(let i=0;i<Object.keys(dataByKey).length+2;i++){
+    keys.forEach(k=>{ try{ localStorage.removeItem('day'+i+'_'+k); }catch(e){} });
+  }
+
+  // 4. Restore data in new sorted order
+  DAYS.forEach((day,newIdx)=>{
+    const key=day.label+'||'+(day.title||'');
+    if(dataByKey[key]){
+      keys.forEach(k=>{
+        if(dataByKey[key][k]) try{ localStorage.setItem('day'+newIdx+'_'+k, dataByKey[key][k]); }catch(e){}
+      });
+    }
+  });
+
   try{ localStorage.setItem('days_structure',JSON.stringify(DAYS)); }catch(e){}
 }
 function openCreateTrip(){
@@ -2089,6 +2119,13 @@ function confirmCreateTrip(){
   // Add to DAYS — store title and dateLabel separately
   DAYS.push({label: dateLabel, title: titleVal, passengers, locs:[]});
   sortDays();
+  // Clear localStorage for the index this new day will occupy — prevents inheriting old data
+  const newIndex = DAYS.findIndex(d=>d.label===dateLabel && d.title===titleVal);
+  if(newIndex > -1){
+    ['chk','hor','names','colos','locs','loccolors','obs','motorista','veiculo'].forEach(k=>{
+      try{ localStorage.removeItem('day'+newIndex+'_'+k); }catch(e){}
+    });
+  }
   closeCreateTrip();
   renderHome();
 }
@@ -3090,7 +3127,6 @@ if ('serviceWorker' in navigator) {
     });
 }
 </script>
-
 
 </body>
 </html>
