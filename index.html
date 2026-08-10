@@ -438,12 +438,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   body.dark #tutorial-box .t-skip{color:#555}
 </style>
 
-
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1976d2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-
 
 
 </head>
@@ -792,6 +790,7 @@ function goHome(){
   currentDay=null;
   try{ localStorage.removeItem('current_day'); }catch(e){}
   reorgMode=false; reorgOrigin=null; currentSort='seat';
+  try{ history.replaceState({page:'home'}, '', ''); }catch(e){}
   renderHome();
 }
 
@@ -799,6 +798,8 @@ function goHome(){
 function openDay(i){
   currentDay=i;
   try{ localStorage.setItem('current_day', i); }catch(e){}
+  // Push history state so back button works
+  try{ history.pushState({page:'day',index:i}, '', ''); }catch(e){}
   const day=DAYS[i];
   // Deep copy passengers so edits don't affect original
   P={};
@@ -1089,6 +1090,7 @@ function openSortMenu(e){
   panel.style.right = (window.innerWidth - rect.right) + 'px';
   panel.style.left = 'auto';
   menu.style.display = 'block';
+  try{ history.pushState({page:'overlay'}, '', ''); }catch(e){}
 }
 
 function closeSortMenu(){
@@ -1374,6 +1376,7 @@ function showFaltosos(){
     ?'<div class="falt-empty">🎉 Todos embarcaram!</div>'
     :faltando.map(p=>`<div class="falt-item"><div class="falt-num">${String(p.num).padStart(2,'0')}</div><div class="falt-info"><div class="falt-name">${p.nome}${p.colo?' <span style="font-size:11px;color:#888">+ 👶 '+p.colo+'</span>':''}</div><div class="falt-loc">📍 ${p.loc}</div></div></div>`).join('');
   document.getElementById('falt-overlay').style.display='flex';
+  try{ history.pushState({page:'overlay'}, '', ''); }catch(e){}
 }
 
 // ===== EDIT =====
@@ -1437,6 +1440,7 @@ function openEdit(n){
   if(emptyBtn) emptyBtn.style.display=(P[n].n && P[n].n!=='-')?'block':'none';
   document.getElementById('edit-overlay').style.display='flex';
   setTimeout(()=>document.getElementById('edit-input').focus(),100);
+  try{ history.pushState({page:'overlay'}, '', ''); }catch(e){}
 }
 
 function onLocSelectChange(val){
@@ -1544,6 +1548,7 @@ function getTextColor(bg){
 // ===== PDF =====
 function openPdfPick(){
   document.getElementById('pdf-pick-overlay').style.display='flex';
+  try{ history.pushState({page:'overlay'}, '', ''); }catch(e){}
 }
 function closePdfPick(){
   document.getElementById('pdf-pick-overlay').style.display='none';
@@ -1979,6 +1984,7 @@ function openHistory(){
       </div>`).join('');
   }
   document.getElementById('history-overlay').style.display='flex';
+  try{ history.pushState({page:'overlay'}, '', ''); }catch(e){}
 }
 
 function closeHistory(){
@@ -2089,6 +2095,7 @@ function openCreateTrip(){
   document.getElementById('trip-seats').value = '';
   document.getElementById('create-trip-overlay').style.display='flex';
   setTimeout(()=>document.getElementById('trip-title').focus(), 100);
+  try{ history.pushState({page:'overlay'}, '', ''); }catch(e){}
 }
 function closeCreateTrip(){
   document.getElementById('create-trip-overlay').style.display='none';
@@ -2151,6 +2158,7 @@ function openEditTrip(i){
   document.getElementById('edit-trip-date').value = dateVal;
   document.getElementById('edit-trip-seats').value = Object.keys(day.passengers).length;
   document.getElementById('edit-trip-overlay').style.display = 'flex';
+  try{ history.pushState({page:'overlay'}, '', ''); }catch(e){}
 }
 
 function closeEditTrip(){
@@ -2184,9 +2192,9 @@ function confirmEditTrip(){
   // Adjust seats if changed
   const currentSeats = Object.keys(day.passengers).length;
   if(seatsVal > currentSeats){
-    // Add new empty seats
+    // Add new empty seats with VAZIO locality
     for(let s=currentSeats+1; s<=seatsVal; s++){
-      day.passengers[s] = {n:'-', l:''};
+      day.passengers[s] = {n:'-', l:'VAZIO'};
     }
   } else if(seatsVal < currentSeats){
     // Remove extra seats and clean their data from localStorage
@@ -2414,6 +2422,7 @@ function confirmExcelImport(){
 function openSettings(){
   document.getElementById('settings-status').style.display='none';
   document.getElementById('settings-overlay').style.display='flex';
+  try{ history.pushState({page:'overlay'}, '', ''); }catch(e){}
 }
 function closeSettings(){
   document.getElementById('settings-overlay').style.display='none';
@@ -3034,6 +3043,7 @@ function startTutorial(){
   tutorialStep = 0;
   document.getElementById('tutorial-screen').style.display = 'flex';
   renderTutorialStep();
+  try{ history.pushState({page:'overlay'}, '', ''); }catch(e){}
 }
 
 function endTutorial(){
@@ -3084,6 +3094,35 @@ function renderTutorialStep(){
 }
 
 
+
+// Handle Android/iOS back button
+window.addEventListener('popstate', function(e){
+  // Check if any overlay is open first - close it instead of going back
+  const overlays=[
+    {id:'falt-overlay', close:()=>document.getElementById('falt-overlay').style.display='none'},
+    {id:'edit-overlay', close:()=>closeEdit()},
+    {id:'pdf-pick-overlay', close:()=>closePdfPick()},
+    {id:'settings-overlay', close:()=>closeSettings()},
+    {id:'history-overlay', close:()=>closeHistory()},
+    {id:'create-trip-overlay', close:()=>closeCreateTrip()},
+    {id:'edit-trip-overlay', close:()=>closeEditTrip()},
+    {id:'sort-menu', close:()=>closeSortMenu()},
+    {id:'tutorial-screen', close:()=>endTutorial()},
+  ];
+  for(const o of overlays){
+    const el=document.getElementById(o.id);
+    if(el && el.style.display!=='none' && el.style.display!==''){
+      o.close();
+      // Push state again so next back press works
+      try{ history.pushState({page:'overlay'}, '', ''); }catch(ex){}
+      return;
+    }
+  }
+  // No overlay open - handle navigation
+  if(currentDay !== null){
+    goHome();
+  }
+});
 // ===== INIT =====
 try{
   const saved = localStorage.getItem('days_structure');
@@ -3127,6 +3166,9 @@ if ('serviceWorker' in navigator) {
     });
 }
 </script>
+
+
+
 
 </body>
 </html>
