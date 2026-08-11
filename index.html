@@ -523,7 +523,6 @@ body.dark .toast-box.err{background:#8b1f1f}
 
 
 
-
 </head>
 <body>
 
@@ -2978,6 +2977,11 @@ function importBackup(event){
         tripsToAdd.forEach(trip=>{
           const newIndex=DAYS.findIndex(d=>d.label===trip.label && d.title===trip.title);
           if(newIndex===-1) return;
+          // CLEAR all old data for this index first (prevents inheriting stale data)
+          ['chk','hor','names','colos','locs','loccolors','obs','motorista','veiculo'].forEach(k=>{
+            try{ localStorage.removeItem('day'+newIndex+'_'+k); }catch(e){}
+          });
+          // Now save fresh data
           if(trip.chk && Object.keys(trip.chk).length>0) localStorage.setItem('day'+newIndex+'_chk',JSON.stringify(trip.chk));
           if(trip.hor && Object.keys(trip.hor).length>0) localStorage.setItem('day'+newIndex+'_hor',JSON.stringify(trip.hor));
           if(trip.obs && trip.obs!=='') localStorage.setItem('day'+newIndex+'_obs',trip.obs);
@@ -3670,7 +3674,6 @@ try{
   <div id="toast-box" class="toast-box">⚠️ <span id="toast-msg">Mensagem</span></div>
 </div>
 
-
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -3678,6 +3681,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 </script>
+
 
 
 </body>
