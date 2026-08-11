@@ -2423,8 +2423,8 @@ function sortDays(){
   // 2. Sort DAYS array by date DESCENDING (newest first)
   DAYS.sort((a,b)=>parseLabelDate(b.label)-parseLabelDate(a.label));
 
-  // 3. Clear all old localStorage day keys
-  for(let i=0;i<Object.keys(dataByKey).length+2;i++){
+  // 3. Clear ALL old localStorage day keys (0-99) to prevent stale data
+  for(let i=0;i<100;i++){
     keys.forEach(k=>{ try{ localStorage.removeItem('day'+i+'_'+k); }catch(e){} });
   }
 
@@ -2479,7 +2479,7 @@ function confirmCreateTrip(){
   // Add to DAYS — store title and dateLabel separately
   DAYS.push({label: dateLabel, title: titleVal, passengers, locs:[]});
   sortDays();
-  // Clear localStorage for the index this new day will occupy — prevents inheriting old data
+  // After sortDays, find the new trip's index and clear its data to prevent inheritance
   const newIndex = DAYS.findIndex(d=>d.label===dateLabel && d.title===titleVal);
   if(newIndex > -1){
     ['chk','hor','names','colos','locs','loccolors','obs','motorista','veiculo'].forEach(k=>{
@@ -3674,6 +3674,7 @@ try{
   <div id="toast-box" class="toast-box">⚠️ <span id="toast-msg">Mensagem</span></div>
 </div>
 
+
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -3681,7 +3682,6 @@ if ('serviceWorker' in navigator) {
     });
 }
 </script>
-
 
 
 </body>
