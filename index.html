@@ -57,16 +57,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bus-front span{font-size:11px;color:#888}
 .row{display:grid;grid-template-columns:1fr 22px 1fr;gap:4px;margin-bottom:4px}
 @media(min-width:600px) and (max-width:767px){
-  .row{grid-template-columns:1fr 1fr 22px 1fr 1fr;gap:4px}
   .seat .name{font-size:10px}
   .seat .num{font-size:8px}
   .seat{min-height:55px;padding:4px 2px 3px}
   .seat .chk{font-size:14px}
   .corridor{font-size:7px}
 }
-@media(min-width:768px){
-  .row.desktop-row{grid-template-columns:1fr 1fr 22px 1fr 1fr;gap:4px}
-}
+.row.desktop-row{grid-template-columns:1fr 1fr 22px 1fr 1fr;gap:4px}
 .seat{background:#f7f8fa;border:1.5px solid #e8eaed;border-radius:8px;padding:5px 3px 4px;cursor:pointer;min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;position:relative;transition:background .12s,border-color .12s}
 .seat.empty-seat{background:#e0e0e0;border-color:#ccc}
 .seat.empty-seat .num{color:#999}
@@ -1209,7 +1206,7 @@ function buildMap(){
   const map=document.getElementById('seat-map');
   map.innerHTML='';
   const seatNums = getSortedSeats();
-  const isDesktop = window.innerWidth >= 768;
+  const isDesktop = window.innerWidth >= 600;
 
   if(isDesktop){
     // Desktop: 4 seats per row (2 left + corridor + 2 right)
@@ -1306,7 +1303,7 @@ window.addEventListener('resize',()=>{
   if(resizeTimer) clearTimeout(resizeTimer);
   resizeTimer=setTimeout(()=>{
     const hasDesktopRows = !!document.querySelector('.desktop-row');
-    const shouldBeDesktop = window.innerWidth >= 768;
+    const shouldBeDesktop = window.innerWidth >= 600;
     if(hasDesktopRows !== shouldBeDesktop) buildMap();
   }, 250);
 });
