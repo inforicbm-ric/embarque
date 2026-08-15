@@ -217,6 +217,10 @@ body.dark .reset-btn:active{background:#3d0f0f}
   body.dark .bus-wrap{background:#121212}
   .dark-btn{background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1}
   .dark-btn:active{background:rgba(255,255,255,.25)}
+  .btn-cols{background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:13px;font-weight:700;cursor:pointer;line-height:1;min-width:32px}
+  .btn-cols:active{background:rgba(255,255,255,.25)}
+  .btn-cols:disabled{opacity:.4;cursor:not-allowed}
+
   .home-dark-btn{position:absolute;top:20px;right:20px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.08)}
   body.dark .home-dark-btn{background:#2a2a2a;border-color:#3a3a3a}
   #home-screen{position:relative}
@@ -554,7 +558,7 @@ body.dark .toast-box.err{background:#8b1f1f}
       <button class="btn-reorg" id="btn-reorg" onclick="toggleReorg()" title="Reorganizar poltronas">⇄</button>
       <button class="btn-sort" id="btn-sort" onclick="openSortMenu(event)" title="Classificar poltronas">⇅</button>
       <input type="file" id="day-excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleDayExcelImport(event)">
-      <button class="dark-btn" onclick="toggleDark()" id="top-dark-btn">🌙</button>
+      <button class="btn-cols" id="btn-cols" onclick="toggleCols()" title="Alternar colunas">4</button>
     </div>
     <div class="stats" id="stats-row">
       <div class="stat"><div class="stat-n" id="s-tot">46</div><div class="stat-l">Capacidade</div></div>
@@ -886,6 +890,7 @@ let currentDay=null; // index into DAYS
 let P={}, chk={}, hor={};
 let activeFilter='TODOS';
 let editingSeat=null;
+let userColsPref=null; // null=auto (4 cols on >=600px), 2=force 2, 4=force 4
 
 // ===== HOME SCREEN =====
 let homeExpanded=false;
@@ -984,6 +989,8 @@ function openDay(i){
 
   // Build filter buttons dynamically
   buildFilters(day.locs);
+  loadColsPref();
+  updateColsBtn();
   buildMap();
   updateStats();
   loadObs();
@@ -1195,6 +1202,44 @@ function loadObs(){
   }catch(e){}
 }
 
+// ===== COLS TOGGLE =====
+function getEffectiveCols(){
+  const w = window.innerWidth;
+  if(w < 600) return 2;
+  if(userColsPref === 2) return 2;
+  return 4;
+}
+
+function toggleCols(){
+  const w = window.innerWidth;
+  if(w < 600){
+    showToast('Tela pequena: apenas 2 colunas disponíveis', true);
+    return;
+  }
+  userColsPref = (userColsPref === 2) ? 4 : 2;
+  try{ localStorage.setItem('cols_preference', String(userColsPref)); }catch(e){}
+  updateColsBtn();
+  buildMap();
+  if(activeFilter !== 'TODOS') setFilter(activeFilter);
+}
+
+function updateColsBtn(){
+  const btn = document.getElementById('btn-cols');
+  if(!btn) return;
+  const cols = getEffectiveCols();
+  btn.textContent = String(cols);
+  btn.title = cols === 4 ? 'Alternar para 2 colunas' : 'Alternar para 4 colunas';
+}
+
+function loadColsPref(){
+  try{
+    const saved = localStorage.getItem('cols_preference');
+    if(saved === '2') userColsPref = 2;
+    else if(saved === '4') userColsPref = 4;
+    else userColsPref = null;
+  }catch(e){ userColsPref = null; }
+}
+
 // ===== SEAT MAP =====
 function shortName(full){
   const skip=new Set(['DE','DA','DO','DOS','DAS','E']);
@@ -1206,7 +1251,7 @@ function buildMap(){
   const map=document.getElementById('seat-map');
   map.innerHTML='';
   const seatNums = getSortedSeats();
-  const isDesktop = window.innerWidth >= 600;
+  const isDesktop = getEffectiveCols() === 4;
 
   if(isDesktop){
     // Desktop: 4 seats per row (2 left + corridor + 2 right)
@@ -1303,7 +1348,7 @@ window.addEventListener('resize',()=>{
   if(resizeTimer) clearTimeout(resizeTimer);
   resizeTimer=setTimeout(()=>{
     const hasDesktopRows = !!document.querySelector('.desktop-row');
-    const shouldBeDesktop = window.innerWidth >= 600;
+    const shouldBeDesktop = getEffectiveCols() === 4;
     if(hasDesktopRows !== shouldBeDesktop) buildMap();
   }, 250);
 });
@@ -2261,9 +2306,7 @@ function toggleDark(){
 function updateDarkBtns(isDark){
   const icon=isDark?'☀️':'🌙';
   const hb=document.getElementById('home-dark-btn');
-  const tb=document.getElementById('top-dark-btn');
   if(hb)hb.textContent=icon;
-  if(tb)tb.textContent=icon;
 }
 function initDarkMode(){
   const saved=localStorage.getItem('darkMode');
