@@ -217,9 +217,8 @@ body.dark .reset-btn:active{background:#3d0f0f}
   body.dark .bus-wrap{background:#121212}
   .dark-btn{background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1}
   .dark-btn:active{background:rgba(255,255,255,.25)}
-  .btn-cols{background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:13px;font-weight:700;cursor:pointer;line-height:1;min-width:32px}
+  .btn-cols{background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:20px;cursor:pointer;line-height:1;font-weight:700}
   .btn-cols:active{background:rgba(255,255,255,.25)}
-  .btn-cols:disabled{opacity:.4;cursor:not-allowed}
 
   .home-dark-btn{position:absolute;top:20px;right:20px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.08)}
   body.dark .home-dark-btn{background:#2a2a2a;border-color:#3a3a3a}
@@ -314,7 +313,7 @@ body.dark button[style*="background:#fff"][style*="border:1.5px solid #c0c8d4"]{
   body.dark .create-trip-input{background:#2a2a2a;border-color:#3a3a3a;color:#f0f0f0}
   body.dark .create-trip-cancel{background:#2a2a2a;border-color:#3a3a3a;color:#aaa}
   /* Per-day Excel import button in top bar */
-  .btn-excel-day{background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:16px;cursor:pointer;line-height:1}
+  .btn-excel-day{background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:20px;cursor:pointer;line-height:1;font-weight:700}
   .btn-excel-day:active{background:rgba(255,255,255,.25)}
 
   .day-card-wrap{position:relative;width:100%;max-width:380px}
@@ -418,6 +417,9 @@ body.dark button[style*="background:#fff"][style*="border:1.5px solid #c0c8d4"]{
   .btn-sort.active{background:#f4a12b}
   #sort-menu{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:995}
   #sort-menu-panel{position:absolute;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.2);overflow:hidden;min-width:220px}
+  #cols-menu{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:995}
+  #cols-menu-panel{position:absolute;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.2);overflow:hidden;min-width:220px}
+  body.dark #cols-menu-panel{background:#1e1e1e}
   .sort-option{padding:12px 16px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f0f0f0;font-family:inherit;background:none;border-left:none;border-right:none;border-top:none;width:100%;text-align:left}
   .sort-option:last-child{border-bottom:none}
   .sort-option:active{background:#f5f5f5}
@@ -558,7 +560,7 @@ body.dark .toast-box.err{background:#8b1f1f}
       <button class="btn-reorg" id="btn-reorg" onclick="toggleReorg()" title="Reorganizar poltronas">⇄</button>
       <button class="btn-sort" id="btn-sort" onclick="openSortMenu(event)" title="Classificar poltronas">⇅</button>
       <input type="file" id="day-excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleDayExcelImport(event)">
-      <button class="btn-cols" id="btn-cols" onclick="toggleCols()" title="Alternar colunas">4</button>
+      <button class="btn-cols" id="btn-cols" onclick="openColsMenu(event)" title="Colunas">▦</button>
     </div>
     <div class="stats" id="stats-row">
       <div class="stat"><div class="stat-n" id="s-tot">46</div><div class="stat-l">Capacidade</div></div>
@@ -762,6 +764,18 @@ body.dark .toast-box.err{background:#8b1f1f}
     </button>
     <button class="sort-option" id="sort-opt-loc" onclick="setSort('loc');closeSortMenu()">
       📍 Por localidade <span class="sort-check" id="sort-check-loc" style="display:none">✓</span>
+    </button>
+  </div>
+</div>
+
+<!-- Cols Menu -->
+<div id="cols-menu" onclick="closeColsMenu()">
+  <div id="cols-menu-panel">
+    <button class="sort-option" id="cols-opt-2" onclick="selectCols(2);event.stopPropagation();">
+      <span>▦</span> 2 colunas <span class="sort-check" id="cols-check-2" style="display:none">✓</span>
+    </button>
+    <button class="sort-option" id="cols-opt-4" onclick="selectCols(4);event.stopPropagation();">
+      <span>▦▦</span> 4 colunas <span class="sort-check" id="cols-check-4" style="display:none">✓</span>
     </button>
   </div>
 </div>
@@ -1210,25 +1224,50 @@ function getEffectiveCols(){
   return 4;
 }
 
-function toggleCols(){
+function openColsMenu(e){
+  e.stopPropagation();
   const w = window.innerWidth;
   if(w < 600){
     showToast('Tela pequena: apenas 2 colunas disponíveis', true);
     return;
   }
-  userColsPref = (userColsPref === 2) ? 4 : 2;
+  const menu = document.getElementById('cols-menu');
+  const btn = document.getElementById('btn-cols');
+  const panel = document.getElementById('cols-menu-panel');
+  const rect = btn.getBoundingClientRect();
+  panel.style.top = (rect.bottom + 6) + 'px';
+  panel.style.right = (window.innerWidth - rect.right) + 'px';
+  panel.style.left = 'auto';
+  // Update checkmarks
+  const cols = getEffectiveCols();
+  document.getElementById('cols-check-2').style.display = cols === 2 ? 'inline' : 'none';
+  document.getElementById('cols-check-4').style.display = cols === 4 ? 'inline' : 'none';
+  document.getElementById('cols-opt-2').classList.toggle('active', cols === 2);
+  document.getElementById('cols-opt-4').classList.toggle('active', cols === 4);
+  menu.style.display = 'block';
+  try{ history.pushState({page:'overlay'}, '', ''); }catch(e){}
+}
+
+function closeColsMenu(){
+  document.getElementById('cols-menu').style.display = 'none';
+}
+
+function selectCols(cols){
+  const w = window.innerWidth;
+  if(w < 600){
+    showToast('Tela pequena: apenas 2 colunas disponíveis', true);
+    closeColsMenu();
+    return;
+  }
+  userColsPref = cols;
   try{ localStorage.setItem('cols_preference', String(userColsPref)); }catch(e){}
-  updateColsBtn();
   buildMap();
   if(activeFilter !== 'TODOS') setFilter(activeFilter);
+  closeColsMenu();
 }
 
 function updateColsBtn(){
-  const btn = document.getElementById('btn-cols');
-  if(!btn) return;
-  const cols = getEffectiveCols();
-  btn.textContent = String(cols);
-  btn.title = cols === 4 ? 'Alternar para 2 colunas' : 'Alternar para 4 colunas';
+  // No-op now, button shows icon only
 }
 
 function loadColsPref(){
@@ -3682,6 +3721,7 @@ window.addEventListener('popstate', function(e){
     {id:'create-trip-overlay', close:()=>closeCreateTrip()},
     {id:'edit-trip-overlay', close:()=>closeEditTrip()},
     {id:'sort-menu', close:()=>closeSortMenu()},
+    {id:'cols-menu', close:()=>closeColsMenu()},
     {id:'tutorial-screen', close:()=>endTutorial()},
   ];
   for(const o of overlays){
