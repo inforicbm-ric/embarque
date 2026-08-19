@@ -531,7 +531,7 @@ body.dark .toast-box.err{background:#8b1f1f}
 <meta name="theme-color" content="#1976d2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="app-version" content="2.0.4"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
+<meta name="app-version" content="2.0.5"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
 <script>
 // Cache buster: append version to force reload on update
 (function(){
@@ -3832,6 +3832,12 @@ try{
 }catch(e){}
 
 initDarkMode();
+
+// Update version display in settings from meta tag
+try{
+  const v = document.querySelector('meta[name=app-version]')?.content || '2.0';
+  document.querySelectorAll('#app-version-display').forEach(el => el.textContent = 'V' + v);
+}catch(e){}
 
 // Restore last open day if user was inside a day before refresh
 try{
