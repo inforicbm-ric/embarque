@@ -531,7 +531,7 @@ body.dark .toast-box.err{background:#8b1f1f}
 <meta name="theme-color" content="#1976d2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="app-version" content="2.0.5"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
+<meta name="app-version" content="2.0.6"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
 <script>
 // Cache buster: append version to force reload on update
 (function(){
@@ -2470,6 +2470,11 @@ function archiveTrip(i){
       }catch(e){}
     });
   }
+  // Clear the now-orphaned last index
+  const lastIdx=DAYS.length-1;
+  ['chk','hor','names','colos','locs','loccolors','obs','motorista','veiculo'].forEach(k=>{
+    try{ localStorage.removeItem('day'+lastIdx+'_'+k); }catch(e){}
+  });
   DAYS.splice(i,1);
   try{
     localStorage.setItem('days_structure',JSON.stringify(DAYS));
@@ -2590,10 +2595,10 @@ function sortDays(){
   // 2. Sort DAYS array by date DESCENDING (newest first)
   DAYS.sort((a,b)=>parseLabelDate(b.label)-parseLabelDate(a.label));
 
-  // 3. Clear ALL old localStorage day keys (0-99) to prevent stale data
-  for(let i=0;i<100;i++){
-    keys.forEach(k=>{ try{ localStorage.removeItem('day'+i+'_'+k); }catch(e){} });
-  }
+  // 3. Clear ALL old localStorage day keys to prevent stale data
+  Object.keys(localStorage).forEach(key=>{
+    if(/^day\d+_/.test(key)){ try{ localStorage.removeItem(key); }catch(e){} }
+  });
 
   // 4. Restore data in new sorted order
   DAYS.forEach((day,newIdx)=>{
@@ -2768,6 +2773,11 @@ function deleteTrip(i){
         }catch(e){}
       });
     }
+    // Clear the now-orphaned last index
+    const lastIdx=DAYS.length-1;
+    ['chk','hor','names','colos','locs','obs'].forEach(k=>{
+      try{ localStorage.removeItem('day'+lastIdx+'_'+k); }catch(e){}
+    });
   }catch(e){}
   // Remove from DAYS array
   DAYS.splice(i,1);
@@ -3063,7 +3073,7 @@ function exportBackup(){
   try{
     const backup={
       app:'embarque-app-backup',
-      version:1,
+      version:2,
       exportedAt:new Date().toISOString(),
       days:[]
     };
@@ -3079,14 +3089,36 @@ function exportBackup(){
       try{ const d=localStorage.getItem('day'+i+'_obs'); if(d) obsData=d; }catch(e){}
       try{ const d=localStorage.getItem('day'+i+'_motorista'); if(d) motoristaData=d; }catch(e){}
       try{ const d=localStorage.getItem('day'+i+'_veiculo'); if(d) veiculoData=d; }catch(e){}
+      // Build full passenger snapshot with localStorage edits applied
+      const passengersCopy=JSON.parse(JSON.stringify(day.passengers||{}));
+      try{
+        const nm=localStorage.getItem('day'+i+'_names');
+        if(nm){ const o=JSON.parse(nm); for(let n in o) if(passengersCopy[n]) passengersCopy[n].n=o[n]; }
+      }catch(e){}
+      try{
+        const cl=localStorage.getItem('day'+i+'_colos');
+        if(cl){ const o=JSON.parse(cl); for(let n in passengersCopy) delete passengersCopy[n].c; for(let n in o) if(passengersCopy[n]) passengersCopy[n].c=o[n]; }
+      }catch(e){}
+      try{
+        const ls=localStorage.getItem('day'+i+'_locs');
+        if(ls){ const o=JSON.parse(ls); for(let n in o) if(passengersCopy[n]) passengersCopy[n].l=o[n]; }
+      }catch(e){}
+      // Build locs list from actual passenger data
+      const seenLocs=new Set();
+      const actualLocs=[];
+      Object.values(passengersCopy).forEach(p=>{
+        if(p.l && p.l!=='VAZIO' && !seenLocs.has(p.l)){ seenLocs.add(p.l); actualLocs.push(p.l); }
+      });
       backup.days.push({
         label:day.label,
-        chk:chkData, hor:horData, names:namesData, colos:colosData, locs:locsData, obs:obsData,
+        title:day.title||'',
+        passengers:passengersCopy,
+        locs:actualLocs,
+        chk:chkData, hor:horData, names:namesData, colos:colosData, locsData:locsData, obs:obsData,
         motorista:motoristaData, veiculo:veiculoData, loccolors:loccolorsData
       });
     });
 
-    backup.days_structure = DAYS;
     backup.history = HISTORY;
     const json=JSON.stringify(backup,null,2);
     const blob=new Blob([json],{type:'application/json'});
@@ -3169,28 +3201,44 @@ function importBackup(event){
         return;
       }
 
-      // Full backup (original behavior)
-      if(backup.days_structure && Array.isArray(backup.days_structure) && backup.days_structure.length>0){
-        DAYS = backup.days_structure;
-        try{ localStorage.setItem('days_structure', JSON.stringify(DAYS)); }catch(e){}
-      }
+      // Full backup (v2: each day has full passenger snapshot)
+      // First, rebuild DAYS from backup.days (which now includes passengers, locs, title)
+      const restoredDays=[];
+      backup.days.forEach(bd=>{
+        restoredDays.push({
+          label:bd.label,
+          title:bd.title||'',
+          passengers:bd.passengers||{},
+          locs:bd.locs||[]
+        });
+      });
+      DAYS=restoredDays;
+      try{ localStorage.setItem('days_structure',JSON.stringify(DAYS)); }catch(e){}
+
       if(backup.history && Array.isArray(backup.history)){
-        HISTORY = backup.history;
-        try{ localStorage.setItem('history_data', JSON.stringify(HISTORY)); }catch(e){}
+        HISTORY=backup.history;
+        try{ localStorage.setItem('history_data',JSON.stringify(HISTORY)); }catch(e){}
       }
+
+      // Clear ALL old day data to prevent stale data mixing
+      Object.keys(localStorage).forEach(key=>{
+        if(/^day\d+_/.test(key)){ try{ localStorage.removeItem(key); }catch(e){} }
+      });
+
+      // Restore localStorage data using exact index match from backup.days order
       backup.days.forEach((bd,bi)=>{
-        let targetIndex=DAYS.findIndex(d=>d.label===bd.label);
-        if(targetIndex===-1) targetIndex=bi;
-        if(targetIndex<0||targetIndex>=DAYS.length)return;
-        localStorage.setItem('day'+targetIndex+'_chk',JSON.stringify(bd.chk||{}));
-        localStorage.setItem('day'+targetIndex+'_hor',JSON.stringify(bd.hor||{}));
-        localStorage.setItem('day'+targetIndex+'_names',JSON.stringify(bd.names||{}));
-        localStorage.setItem('day'+targetIndex+'_colos',JSON.stringify(bd.colos||{}));
-        localStorage.setItem('day'+targetIndex+'_locs',JSON.stringify(bd.locs||{}));
-        localStorage.setItem('day'+targetIndex+'_obs',bd.obs||'');
-        localStorage.setItem('day'+targetIndex+'_motorista',bd.motorista||'');
-        localStorage.setItem('day'+targetIndex+'_veiculo',bd.veiculo||'');
-        localStorage.setItem('day'+targetIndex+'_loccolors',JSON.stringify(bd.loccolors||{}));
+        if(bi<0||bi>=DAYS.length)return;
+        localStorage.setItem('day'+bi+'_chk',JSON.stringify(bd.chk||{}));
+        localStorage.setItem('day'+bi+'_hor',JSON.stringify(bd.hor||{}));
+        localStorage.setItem('day'+bi+'_names',JSON.stringify(bd.names||{}));
+        localStorage.setItem('day'+bi+'_colos',JSON.stringify(bd.colos||{}));
+        // For v1 backups, 'locs' might be the localStorage locs edits; for v2, use locsData if present
+        const locsToSave = bd.locsData || bd.locs || {};
+        localStorage.setItem('day'+bi+'_locs',JSON.stringify(locsToSave));
+        localStorage.setItem('day'+bi+'_obs',bd.obs||'');
+        localStorage.setItem('day'+bi+'_motorista',bd.motorista||'');
+        localStorage.setItem('day'+bi+'_veiculo',bd.veiculo||'');
+        localStorage.setItem('day'+bi+'_loccolors',JSON.stringify(bd.loccolors||{}));
       });
       showSettingsStatus('✅ Backup restaurado! Atualizando...',false);
       setTimeout(()=>{
