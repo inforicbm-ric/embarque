@@ -930,8 +930,8 @@ function renderHome(){
     const state=loadDayState(i);
     const emb=Object.values(state.chk).filter(Boolean).length;
     // Count only registered passengers (not empty seats) for progress
-    const totalCadastrados=Object.values(day.passengers).filter(p=>p.n && p.n!=='-' && p.n!=='−').length;
-    const pct=totalCadastrados>0?Math.round(emb/totalCadastrados*100):0;
+    const total=Object.values(day.passengers).filter(p=>p.n && p.n!=='-' && p.n!=='−').length;
+    const pct=total>0?Math.round(emb/total*100):0;
     const icons=['📅🚌','📅🚌','📅🚌'];
     const wrap=document.createElement('div');
     wrap.className='day-card-wrap';
