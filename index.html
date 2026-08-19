@@ -531,7 +531,7 @@ body.dark .toast-box.err{background:#8b1f1f}
 <meta name="theme-color" content="#1976d2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="app-version" content="2.0.1"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
+<meta name="app-version" content="2.0.2"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
 <script>
 // Cache buster: append version to force reload on update
 (function(){
@@ -783,9 +783,7 @@ body.dark .toast-box.err{background:#8b1f1f}
     <button class="sort-option" id="sort-opt-name" onclick="setSort('name');closeSortMenu()">
       🔤 Ordem alfabética por nome <span class="sort-check" id="sort-check-name" style="display:none">✓</span>
     </button>
-    <button class="sort-option" id="sort-opt-loc" onclick="setSort('loc');closeSortMenu()">
-      📍 Por localidade <span class="sort-check" id="sort-check-loc" style="display:none">✓</span>
-    </button>
+
   </div>
 </div>
 
@@ -1445,7 +1443,7 @@ function closeSortMenu(){
 function setSort(type){
   currentSort = type;
   // Update checkmarks
-  ['seat','name','loc'].forEach(t=>{
+  ['seat','name'].forEach(t=>{
     const check = document.getElementById('sort-check-'+t);
     const opt = document.getElementById('sort-opt-'+t);
     if(check) check.style.display = t===type ? 'inline' : 'none';
