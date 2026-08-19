@@ -29,7 +29,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* ===== APP SCREEN ===== */
 #app-screen{display:none}
 .top-bar{background:#1a3a5c;color:#fff;padding:10px 14px 10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.25)}
-.top-bar-row1{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.top-bar-row1{display:flex;align-items:center;gap:4px;margin-bottom:10px}
 .back-btn{background:rgba(255,255,255,.15);border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px}
 .back-btn:active{background:rgba(255,255,255,.25)}
 .top-title{font-size:14px;font-weight:700;flex:1;text-align:center}
@@ -905,6 +905,7 @@ let P={}, chk={}, hor={};
 let activeFilter='TODOS';
 let editingSeat=null;
 let userColsPref=null; // null=auto (4 cols on >=600px), 2=force 2, 4=force 4
+let touchJustHandled=false; // iOS Safari: blocks ghost click after touchend
 
 // ===== HOME SCREEN =====
 let homeExpanded=false;
@@ -1366,11 +1367,11 @@ function createSeatEl(n){
     if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
   },{passive:true});
   seat.addEventListener('touchend',(e)=>{
-    if(pressTimer){clearTimeout(pressTimer);pressTimer=null;if(!moved)toggleSeat(n);}
+    if(pressTimer){clearTimeout(pressTimer);pressTimer=null;if(!moved){touchJustHandled=true;toggleSeat(n);setTimeout(()=>touchJustHandled=false,500);}}
     moved=false;
   },{passive:true});
   seat.addEventListener('contextmenu',(e)=>{e.preventDefault();openEdit(n);});
-  seat.addEventListener('click',(e)=>{if(e.pointerType==='touch')return;toggleSeat(n);});
+  seat.addEventListener('click',(e)=>{if(touchJustHandled)return;toggleSeat(n);});
 
   return seat;
 }
@@ -1437,6 +1438,10 @@ function getSortedSeats(){
   if(currentSort === 'seat') return seatNums;
   if(currentSort === 'name'){
     return [...seatNums].sort((a,b)=>{
+      const isEmptyA = !P[a].n || P[a].n === '-' || P[a].n === '−';
+      const isEmptyB = !P[b].n || P[b].n === '-' || P[b].n === '−';
+      if(isEmptyA && !isEmptyB) return 1;
+      if(!isEmptyA && isEmptyB) return -1;
       const na = shortName(P[a].n).replace('\n',' ');
       const nb = shortName(P[b].n).replace('\n',' ');
       return na.localeCompare(nb, 'pt-BR');
@@ -1970,17 +1975,28 @@ function exportMapPDF(){
   // Determine seat order for map based on pdfSortChoice
   let seatNums=Object.keys(P).map(Number);
   let locOrder=[...DAYS[currentDay].locs||[]];
-  if(!locOrder.includes('VAZIO')) locOrder.unshift('VAZIO');
+  if(!locOrder.includes('VAZIO')) locOrder.push('VAZIO');
   if(pdfSortChoice==='name'){
-    seatNums.sort((a,b)=>P[a].n.localeCompare(P[b].n,'pt-BR'));
+    seatNums.sort((a,b)=>{
+      const isEmptyA = !P[a].n || P[a].n==='-' || P[a].n==='−';
+      const isEmptyB = !P[b].n || P[b].n==='-' || P[b].n==='−';
+      if(isEmptyA && !isEmptyB) return 1;
+      if(!isEmptyA && isEmptyB) return -1;
+      return P[a].n.localeCompare(P[b].n,'pt-BR');
+    });
   } else if(pdfSortChoice==='loc'){
     seatNums.sort((a,b)=>{
+      const isEmptyA = !P[a].n || P[a].n==='-' || P[a].n==='−';
+      const isEmptyB = !P[b].n || P[b].n==='-' || P[b].n==='−';
+      if(isEmptyA && !isEmptyB) return 1;
+      if(!isEmptyA && isEmptyB) return -1;
+      if(isEmptyA && isEmptyB) return a - b;
       const aLoc=(P[a].l===''||P[a].l===undefined)?'VAZIO':P[a].l;
       const bLoc=(P[b].l===''||P[b].l===undefined)?'VAZIO':P[b].l;
       const la=locOrder.indexOf(aLoc), lb=locOrder.indexOf(bLoc);
       const ia=la===-1?999:la, ib=lb===-1?999:lb;
       if(ia!==ib) return ia-ib;
-      return P[a].n.localeCompare(P[b].n,'pt-BR'); // secondary: alphabetical by name
+      return P[a].n.localeCompare(P[b].n,'pt-BR');
     });
   } else {
     seatNums.sort((a,b)=>a-b);
@@ -2189,12 +2205,22 @@ function exportPDF(){
   }
   // Apply PDF sort — match screen order exactly
   let locOrder=[...DAYS[currentDay].locs||[]];
-  // Ensure VAZIO is included at position 0 for consistent ordering
-  if(!locOrder.includes('VAZIO')) locOrder.unshift('VAZIO');
+  // Ensure VAZIO is included at the end for consistent ordering
+  if(!locOrder.includes('VAZIO')) locOrder.push('VAZIO');
   const sortFn=(a,b)=>{
     if(pdfSortChoice==='seat') return a.num-b.num;
-    if(pdfSortChoice==='name') return a.nome.localeCompare(b.nome,'pt-BR');
+    if(pdfSortChoice==='name'){
+      const isEmptyA = !a.nome || a.nome==='-' || a.nome==='−';
+      const isEmptyB = !b.nome || b.nome==='-' || b.nome==='−';
+      if(isEmptyA && !isEmptyB) return 1;
+      if(!isEmptyA && isEmptyB) return -1;
+      return a.nome.localeCompare(b.nome,'pt-BR');
+    }
     if(pdfSortChoice==='loc'){
+      const isEmptyA = !a.nome || a.nome==='-' || a.nome==='−';
+      const isEmptyB = !b.nome || b.nome==='-' || b.nome==='−';
+      if(isEmptyA && !isEmptyB) return 1;
+      if(!isEmptyA && isEmptyB) return -1;
       const aLoc=(a.loc===''||a.loc===undefined)?'VAZIO':a.loc;
       const bLoc=(b.loc===''||b.loc===undefined)?'VAZIO':b.loc;
       const la=locOrder.indexOf(aLoc), lb=locOrder.indexOf(bLoc);
@@ -2206,6 +2232,12 @@ function exportPDF(){
   };
   embarcados.sort(sortFn);
   faltando.sort(sortFn);
+  // Move empty seats to bottom for name/loc sorts
+  if(pdfSortChoice==='name' || pdfSortChoice==='loc'){
+    const isEmpty = p => !p.nome || p.nome==='-' || p.nome==='−';
+    embarcados.sort((a,b)=>{const ea=isEmpty(a),eb=isEmpty(b);if(ea&&!eb)return 1;if(!ea&&eb)return-1;return 0;});
+    faltando.sort((a,b)=>{const ea=isEmpty(a),eb=isEmpty(b);if(ea&&!eb)return 1;if(!ea&&eb)return-1;return 0;});
+  }
   const capacidade=Object.keys(P).length;
   let cadastrados=0;
   for(let n in P){
@@ -2452,27 +2484,32 @@ function restoreHistory(i){
   }
   const newDay={label:h.label, title:h.title||'', passengers, locs:h.locs||[]};
   DAYS.push(newDay);
+
+  // CRITICAL: Save history data to localStorage at the temporary index (before sortDays captures it)
+  // sortDays() reads localStorage, clears everything, reorders, then restores.
+  // If we don't save here first, the restored day's data gets lost.
+  const tempIndex=DAYS.length-1;
+  if(h.chk && Object.keys(h.chk).length>0){
+    try{ localStorage.setItem('day'+tempIndex+'_chk',JSON.stringify(h.chk)); }catch(e){}
+  }
+  if(h.hor && Object.keys(h.hor).length>0){
+    try{ localStorage.setItem('day'+tempIndex+'_hor',JSON.stringify(h.hor)); }catch(e){}
+  }
+  if(h.obs && h.obs!==''){
+    try{ localStorage.setItem('day'+tempIndex+'_obs', h.obs); }catch(e){}
+  }
+  if(h.motorista && h.motorista!==''){
+    try{ localStorage.setItem('day'+tempIndex+'_motorista', h.motorista); }catch(e){}
+  }
+  if(h.veiculo && h.veiculo!==''){
+    try{ localStorage.setItem('day'+tempIndex+'_veiculo', h.veiculo); }catch(e){}
+  }
+  if(h.loccolors && Object.keys(h.loccolors).length>0){
+    try{ localStorage.setItem('day'+tempIndex+'_loccolors', JSON.stringify(h.loccolors)); }catch(e){}
+  }
+
   sortDays();
-  // Find the index of the restored day to save its chk state
-  const newIndex=DAYS.findIndex(d=>d.label===h.label);
-  if(newIndex>-1 && h.chk && Object.keys(h.chk).length>0){
-    try{ localStorage.setItem('day'+newIndex+'_chk',JSON.stringify(h.chk)); }catch(e){}
-  }
-  if(newIndex>-1 && h.hor && Object.keys(h.hor).length>0){
-    try{ localStorage.setItem('day'+newIndex+'_hor',JSON.stringify(h.hor)); }catch(e){}
-  }
-  if(newIndex>-1 && h.obs){
-    try{ localStorage.setItem('day'+newIndex+'_obs', h.obs); }catch(e){}
-  }
-  if(newIndex>-1 && h.motorista){
-    try{ localStorage.setItem('day'+newIndex+'_motorista', h.motorista); }catch(e){}
-  }
-  if(newIndex>-1 && h.loccolors){
-    try{ localStorage.setItem('day'+newIndex+'_loccolors', JSON.stringify(h.loccolors)); }catch(e){}
-  }
-  if(newIndex>-1 && h.veiculo){
-    try{ localStorage.setItem('day'+newIndex+'_veiculo', h.veiculo); }catch(e){}
-  }
+
   // Remove from history
   HISTORY.splice(i,1);
   try{
@@ -2999,7 +3036,7 @@ function exportBackup(){
       days:[]
     };
     DAYS.forEach((day,i)=>{
-      let chkData={}, horData={}, namesData={}, colosData={}, locsData={}, obsData='';
+      let chkData={}, horData={}, namesData={}, colosData={}, locsData={}, obsData='', motoristaData='', veiculoData='';
       try{ const d=localStorage.getItem('day'+i+'_chk'); if(d) chkData=JSON.parse(d); }catch(e){}
       try{ const d=localStorage.getItem('day'+i+'_hor'); if(d) horData=JSON.parse(d); }catch(e){}
       try{ const d=localStorage.getItem('day'+i+'_names'); if(d) namesData=JSON.parse(d); }catch(e){}
@@ -3008,9 +3045,12 @@ function exportBackup(){
       let loccolorsData={};
       try{ const d=localStorage.getItem('day'+i+'_loccolors'); if(d) loccolorsData=JSON.parse(d); }catch(e){}
       try{ const d=localStorage.getItem('day'+i+'_obs'); if(d) obsData=d; }catch(e){}
+      try{ const d=localStorage.getItem('day'+i+'_motorista'); if(d) motoristaData=d; }catch(e){}
+      try{ const d=localStorage.getItem('day'+i+'_veiculo'); if(d) veiculoData=d; }catch(e){}
       backup.days.push({
         label:day.label,
-        chk:chkData, hor:horData, names:namesData, colos:colosData, locs:locsData, obs:obsData
+        chk:chkData, hor:horData, names:namesData, colos:colosData, locs:locsData, obs:obsData,
+        motorista:motoristaData, veiculo:veiculoData, loccolors:loccolorsData
       });
     });
 
@@ -3055,8 +3095,9 @@ function importBackup(event){
         let added=0, skipped=0;
         const tripsToAdd=[];
         backup.trips.forEach(trip=>{
-          const exists=DAYS.some(d=>d.label===trip.label && d.title===trip.title);
-          if(exists){ skipped++; return; }
+          const existsInDays=DAYS.some(d=>d.label===trip.label && d.title===trip.title);
+          const existsInHistory=HISTORY.some(h=>h.label===trip.label && h.title===trip.title);
+          if(existsInDays || existsInHistory){ skipped++; return; }
           tripsToAdd.push(trip);
         });
         // Add all trips first
@@ -3117,7 +3158,7 @@ function importBackup(event){
         localStorage.setItem('day'+targetIndex+'_obs',bd.obs||'');
         localStorage.setItem('day'+targetIndex+'_motorista',bd.motorista||'');
         localStorage.setItem('day'+targetIndex+'_veiculo',bd.veiculo||'');
-        if(bd.loccolors) localStorage.setItem('day'+targetIndex+'_loccolors',JSON.stringify(bd.loccolors));
+        localStorage.setItem('day'+targetIndex+'_loccolors',JSON.stringify(bd.loccolors||{}));
       });
       showSettingsStatus('✅ Backup restaurado! Atualizando...',false);
       setTimeout(()=>{
