@@ -531,6 +531,20 @@ body.dark .toast-box.err{background:#8b1f1f}
 <meta name="theme-color" content="#1976d2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="app-version" content="2.0.1"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
+<script>
+// Cache buster: append version to force reload on update
+(function(){
+  const v = document.querySelector('meta[name=app-version]')?.content || '1';
+  const links = document.querySelectorAll('link[rel=stylesheet], script[src]');
+  links.forEach(l => {
+    const url = new URL(l.href || l.src, location.href);
+    url.searchParams.set('_v', v);
+    if(l.href) l.href = url.toString();
+    if(l.src) l.src = url.toString();
+  });
+})();
+</script>
 
 
 
@@ -549,6 +563,13 @@ body.dark .toast-box.err{background:#8b1f1f}
   <div class="day-cards" id="day-cards"></div>
   <div class="home-empty" id="home-empty" style="display:none">Nenhuma viagem criada ainda.</div>
   <button class="btn-create-trip" onclick="openCreateTrip()">+ Criar Viagem</button>
+</div>
+
+<!-- UPDATE BANNER -->
+<div id="update-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:10000;background:#f4a12b;color:#fff;text-align:center;padding:10px 14px;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.2)">
+  🔄 Nova versão disponível!
+  <button onclick="applyUpdate()" style="background:#fff;color:#f4a12b;border:none;border-radius:6px;padding:4px 12px;margin-left:8px;font-size:12px;font-weight:700;cursor:pointer">Atualizar agora</button>
+  <button onclick="dismissUpdate()" style="background:transparent;color:#fff;border:1.5px solid #fff;border-radius:6px;padding:3px 10px;margin-left:6px;font-size:12px;cursor:pointer">Depois</button>
 </div>
 
 <!-- APP SCREEN -->
@@ -844,9 +865,16 @@ body.dark .toast-box.err{background:#8b1f1f}
     <div class="settings-status" id="settings-status"></div>
 
     <div style="text-align:center;margin-top:18px;padding-top:14px;border-top:1px solid #f0f0f0">
-      <div style="font-size:13px;font-weight:700;color:#1a3a5c">Embarque V2.0</div>
+      <div style="font-size:13px;font-weight:700;color:#1a3a5c">Embarque <span id="app-version-display">V2.0</span></div>
       <div style="font-size:11px;color:#888;margin-top:2px">100% offline · PWA</div>
+      <script>document.getElementById('app-version-display').textContent='V'+(document.querySelector('meta[name=app-version]')?.content||'2.0');</script>
     </div>
+    <div class="settings-section" style="border-top:1px solid #f0f0f0;padding-top:16px">
+      <div class="settings-section-title">🔄 Atualização</div>
+      <div class="settings-section-desc">Verifique se há uma nova versão do app disponível. Se houver, toque para atualizar instantaneamente.</div>
+      <button class="settings-btn settings-btn-export" onclick="checkForUpdate()">🔄 Verificar Atualização</button>
+    </div>
+
     <button class="settings-close" onclick="closeSettings()">Fechar</button>
   </div>
 </div>
@@ -3831,10 +3859,95 @@ try{
 </div>
 
 <script>
+// Service Worker with update detection
+let swRegistration = null;
+let updateFound = false;
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js');
+        navigator.serviceWorker.register('./service-worker.js')
+            .then(reg => {
+                swRegistration = reg;
+                // Check for updates every 30 seconds
+                setInterval(() => {
+                    if(reg.update) reg.update();
+                }, 30000);
+
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if(newWorker.state === 'installed' && navigator.serviceWorker.controller){
+                            // New version available
+                            updateFound = true;
+                            showUpdateBanner();
+                        }
+                    });
+                });
+            })
+            .catch(err => console.log('SW registration failed:', err));
     });
+
+    // Listen for messages from SW
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if(event.data === 'UPDATE_AVAILABLE'){
+            updateFound = true;
+            showUpdateBanner();
+        }
+    });
+}
+
+function showUpdateBanner(){
+    const banner = document.getElementById('update-banner');
+    if(banner) banner.style.display = 'block';
+}
+
+function dismissUpdate(){
+    const banner = document.getElementById('update-banner');
+    if(banner) banner.style.display = 'none';
+}
+
+function applyUpdate(){
+    if(swRegistration && swRegistration.waiting){
+        // Tell SW to skip waiting and activate
+        swRegistration.waiting.postMessage('SKIP_WAITING');
+    }
+    // Force reload from server (not cache)
+    window.location.reload(true);
+}
+
+// Manual check function for settings button
+function checkForUpdate(){
+    if(!('serviceWorker' in navigator)){
+        showToast('Atualização não disponível neste navegador', true);
+        return;
+    }
+    showToast('Verificando atualização...');
+    if(swRegistration && swRegistration.update){
+        swRegistration.update().then(() => {
+            if(updateFound){
+                showUpdateBanner();
+            } else {
+                showToast('Você já está na versão mais recente!');
+            }
+        }).catch(() => {
+            showToast('Erro ao verificar. Tente novamente.', true);
+        });
+    } else {
+        // Fallback: check version via fetch
+        fetch('./index.html?_=' + Date.now(), {cache:'no-store'})
+            .then(r => r.text())
+            .then(text => {
+                const match = text.match(/<meta name="app-version" content="([^"]+)"/);
+                const serverVersion = match ? match[1] : '1';
+                const currentVersion = document.querySelector('meta[name=app-version]')?.content || '1';
+                if(serverVersion !== currentVersion){
+                    showUpdateBanner();
+                } else {
+                    showToast('Você já está na versão mais recente!');
+                }
+            })
+            .catch(() => showToast('Sem conexão. Verifique sua internet.', true));
+    }
 }
 </script>
 
