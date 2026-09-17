@@ -551,7 +551,7 @@ body.dark .toast-box.err{background:#8b1f1f}
 <meta name="theme-color" content="#1976d2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="app-version" content="2.0.7"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
+<meta name="app-version" content="2.0.8"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
 <script>
 // Cache buster: append version to force reload on update
 (function(){
@@ -673,7 +673,7 @@ body.dark .toast-box.err{background:#8b1f1f}
 
   <div class="action-btns">
     <button class="btn-pdf" onclick="openPdfPick()">📄 PDF</button>
-    <button class="btn-falt" onclick="showFaltosos()">📋 Faltosos</button>
+    <button class="btn-falt" onclick="showFaltosos()">✋ Ausentes</button>
     <button class="btn-wpp" onclick="shareWhatsApp()">📲 WhatsApp</button>
     <button class="btn-back" onclick="goHome()">← Voltar</button>
   </div>
@@ -696,12 +696,8 @@ body.dark .toast-box.err{background:#8b1f1f}
 <div id="falt-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:998;align-items:flex-end;justify-content:center">
   <div class="falt-panel">
     <div class="falt-header">
-      <h3>❌ Faltosos <span id="falt-count-badge" style="background:#f4a12b;color:#fff;border-radius:10px;padding:2px 8px;font-size:12px;margin-left:4px">0</span></h3>
+      <h3>✋ Ausentes <span id="falt-count-badge" style="background:#f4a12b;color:#fff;border-radius:10px;padding:2px 8px;font-size:12px;margin-left:4px">0</span></h3>
       <button class="falt-close" onclick="document.getElementById('falt-overlay').style.display='none'">×</button>
-    </div>
-    <div class="falt-tabs">
-      <div class="falt-tab active" id="tab-nao-emb" onclick="switchFaltTab('nao-emb')">📋 Não embarcados</div>
-      <div class="falt-tab" id="tab-ausentes" onclick="switchFaltTab('ausentes')">✋ Ausentes <span id="ausentes-badge" style="background:#c0303a;color:#fff;border-radius:8px;padding:1px 6px;font-size:11px;margin-left:3px">0</span></div>
     </div>
     <div class="falt-body" id="falt-body"></div>
   </div>
@@ -1841,7 +1837,7 @@ function switchFaltTab(tab){
 function renderNaoEmbarcados(){
   const faltando=[];
   for(let n in P){const num=Number(n);if(!chk[num])faltando.push({num,nome:P[num].n,loc:P[num].l,colo:P[num].c});}
-  document.getElementById('falt-count-badge').textContent=faltando.length;
+  // count updated in renderAusentesList
   const body=document.getElementById('falt-body');
   body.innerHTML=faltando.length===0
     ?'<div class="falt-empty">🎉 Todos embarcaram!</div>'
@@ -1850,7 +1846,9 @@ function renderNaoEmbarcados(){
 
 function renderAusentesList(){
   const body=document.getElementById('falt-body');
-  updateAusentesBadge();
+  // Update badge with ausentes count
+  const badge=document.getElementById('falt-count-badge');
+  if(badge) badge.textContent=AUSENTES.length;
   if(!AUSENTES||AUSENTES.length===0){
     body.innerHTML='<div class="falt-empty">Nenhum ausente registrado.</div>';
     return;
@@ -1867,11 +1865,7 @@ function renderAusentesList(){
 }
 
 function showFaltosos(){
-  currentFaltTab = 'nao-emb';
-  document.getElementById('tab-nao-emb').classList.add('active');
-  document.getElementById('tab-ausentes').classList.remove('active');
-  updateAusentesBadge();
-  renderNaoEmbarcados();
+  renderAusentesList();
   document.getElementById('falt-overlay').style.display='flex';
   try{ history.pushState({page:'overlay'}, '', ''); }catch(e){}
 }
@@ -2374,84 +2368,67 @@ function exportPDF(){
   document.getElementById('pdf-map-report').innerHTML='';
   const now=new Date();
   const dateStr=now.toLocaleDateString('pt-BR')+' às '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  let embarcados=[],faltando=[],colos=[];
+  let embarcados=[],aEmbarcarList=[],colos=[];
   for(let n in P){
     const num=Number(n);
-    if(chk[num])embarcados.push({num,nome:P[num].n,loc:P[num].l});
-    else faltando.push({num,nome:P[num].n,loc:P[num].l});
+    const isEmpty = !P[num].n || P[num].n==='-' || P[num].n==='−';
+    if(!isEmpty){
+      if(chk[num]) embarcados.push({num,nome:P[num].n,loc:P[num].l});
+      else aEmbarcarList.push({num,nome:P[num].n,loc:P[num].l});
+    }
     if(P[num].c) colos.push({num,nome:P[num].n,colo:P[num].c});
   }
-  // Apply PDF sort — match screen order exactly
   let locOrder=[...DAYS[currentDay].locs||[]];
-  // Ensure VAZIO is included at the end for consistent ordering
   if(!locOrder.includes('VAZIO')) locOrder.push('VAZIO');
   const sortFn=(a,b)=>{
     if(pdfSortChoice==='seat') return a.num-b.num;
-    if(pdfSortChoice==='name'){
-      const isEmptyA = !a.nome || a.nome==='-' || a.nome==='−';
-      const isEmptyB = !b.nome || b.nome==='-' || b.nome==='−';
-      if(isEmptyA && !isEmptyB) return 1;
-      if(!isEmptyA && isEmptyB) return -1;
-      return a.nome.localeCompare(b.nome,'pt-BR');
-    }
+    if(pdfSortChoice==='name') return a.nome.localeCompare(b.nome,'pt-BR');
     if(pdfSortChoice==='loc'){
-      const isEmptyA = !a.nome || a.nome==='-' || a.nome==='−';
-      const isEmptyB = !b.nome || b.nome==='-' || b.nome==='−';
-      if(isEmptyA && !isEmptyB) return 1;
-      if(!isEmptyA && isEmptyB) return -1;
       const aLoc=(a.loc===''||a.loc===undefined)?'VAZIO':a.loc;
       const bLoc=(b.loc===''||b.loc===undefined)?'VAZIO':b.loc;
       const la=locOrder.indexOf(aLoc), lb=locOrder.indexOf(bLoc);
       const ia=la===-1?999:la, ib=lb===-1?999:lb;
       if(ia!==ib) return ia-ib;
-      return a.nome.localeCompare(b.nome,'pt-BR'); // secondary: alphabetical by name
+      return a.nome.localeCompare(b.nome,'pt-BR');
     }
     return a.num-b.num;
   };
   embarcados.sort(sortFn);
-  faltando.sort(sortFn);
-  // Move empty seats to bottom for name/loc sorts
-  if(pdfSortChoice==='name' || pdfSortChoice==='loc'){
-    const isEmpty = p => !p.nome || p.nome==='-' || p.nome==='−';
-    embarcados.sort((a,b)=>{const ea=isEmpty(a),eb=isEmpty(b);if(ea&&!eb)return 1;if(!ea&&eb)return-1;return 0;});
-    faltando.sort((a,b)=>{const ea=isEmpty(a),eb=isEmpty(b);if(ea&&!eb)return 1;if(!ea&&eb)return-1;return 0;});
-  }
+  aEmbarcarList.sort(sortFn);
+  const ausentes=[...AUSENTES].sort((a,b)=>a.seat-b.seat);
   const capacidade=Object.keys(P).length;
-  let cadastrados=0;
-  for(let n in P){
-    const num=Number(n);
-    if(P[num].n && P[num].n!=='-' && P[num].n!=='−') cadastrados++;
-  }
-  const aEmbarcar=Math.max(0, cadastrados-embarcados.length);
+  const cadastrados=embarcados.length+aEmbarcarList.length;
   const totalPassageiros=cadastrados+colos.length;
   const obs=document.getElementById('obs-field').value||'';
   const motorista=document.getElementById('motorista-field').value||'';
   const veiculo=document.getElementById('veiculo-field').value||'';
   const rows_emb=embarcados.map(p=>`<tr><td>${String(p.num).padStart(2,'0')}</td><td>${p.nome}</td><td>${p.loc}</td><td>${hor[p.num]||'-'}</td></tr>`).join('');
-  const rows_falt=faltando.map(p=>`<tr><td>${String(p.num).padStart(2,'0')}</td><td>${p.nome}</td><td>${p.loc}</td><td>—</td></tr>`).join('');
+  const rows_aemb=aEmbarcarList.map(p=>`<tr><td>${String(p.num).padStart(2,'0')}</td><td>${p.nome}</td><td>${p.loc}</td></tr>`).join('');
+  const rows_aus=ausentes.map(a=>`<tr><td>${String(a.seat).padStart(2,'0')}</td><td>${a.nome}</td><td>${a.loc}</td><td>${a.colo?'👶 '+a.colo:'—'}</td></tr>`).join('');
   const rows_colo=colos.map(p=>`<tr><td>${String(p.num).padStart(2,'0')}</td><td>${p.colo}</td><td>Vinculado a: ${p.nome}</td></tr>`).join('');
-  const coloSection = colos.length>0 ? `
-    <h2>👶 Crianças de Colo (${colos.length})</h2>
-    <table><tr><th>Poltrona</th><th>Criança</th><th>Responsável</th></tr>${rows_colo}</table>` : '';
+  const coloSection=colos.length>0?`<h2>👶 Crianças de Colo (${colos.length})</h2><table><tr><th>Poltrona</th><th>Criança</th><th>Responsável</th></tr>${rows_colo}</table>`:'';
   document.getElementById('pdf-report').innerHTML=`
-    <h1>🚌 ${DAYS[currentDay].title ? DAYS[currentDay].title : 'Relatório de Embarque'}</h1><div style="font-size:16px;font-weight:700;color:#1a3a5c;margin:4px 0 2px">${DAYS[currentDay].label}</div>
+    <h1>🚌 ${DAYS[currentDay].title||'Relatório de Embarque'}</h1>
+    <div style="font-size:16px;font-weight:700;color:#1a3a5c;margin:4px 0 2px">${DAYS[currentDay].label}</div>
     <div class="rdate">Gerado em ${dateStr}</div>
     <div class="summary">
       <div class="sum-item"><div class="sum-n">${capacidade}</div><div class="sum-l">Capacidade</div></div>
       <div class="sum-item"><div class="sum-n ok">${embarcados.length}</div><div class="sum-l">Embarcados</div></div>
-      <div class="sum-item"><div class="sum-n falt">${aEmbarcar}</div><div class="sum-l">A Embarcar</div></div>
+      <div class="sum-item"><div class="sum-n falt">${aEmbarcarList.length}</div><div class="sum-l">A Embarcar</div></div>
+      ${ausentes.length>0?`<div class="sum-item"><div class="sum-n" style="color:#c0303a">${ausentes.length}</div><div class="sum-l">✋ Ausentes</div></div>`:''}
       ${colos.length>0?`<div class="sum-item"><div class="sum-n" style="color:#d4881a">${colos.filter(p=>chk[p.num]).length}/${colos.length}</div><div class="sum-l">👶 No colo</div></div>`:''}
     </div>
     <div style="font-size:12px;color:#666;margin-bottom:10px">👥 Total de Passageiros: <strong>${totalPassageiros}</strong></div>
     <h2>✅ Passageiros Embarcados (${embarcados.length})</h2>
     <table><tr><th>#</th><th>Nome</th><th>Localidade</th><th>Horário</th></tr>${rows_emb||'<tr><td colspan="4">Nenhum embarcado.</td></tr>'}</table>
-    <h2>❌ Passageiros Faltosos (${faltando.length})</h2>
-    <table><tr><th>#</th><th>Nome</th><th>Localidade</th><th>Horário</th></tr>${rows_falt||'<tr><td colspan="4">Todos embarcaram!</td></tr>'}</table>
+    <h2>⏳ Passageiros a Embarcar (${aEmbarcarList.length})</h2>
+    <table><tr><th>#</th><th>Nome</th><th>Localidade</th></tr>${rows_aemb||'<tr><td colspan="3">Todos embarcaram!</td></tr>'}</table>
+    ${ausentes.length>0?`<h2>✋ Passageiros Ausentes (${ausentes.length})</h2><table><tr><th>#</th><th>Nome</th><th>Localidade</th><th>Colo</th></tr>${rows_aus}</table>`:''}
     ${coloSection}
     ${motorista?`<h2>👤 Informações do Motorista</h2><div class="obs-box">${motorista.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`:''}
     ${veiculo?`<h2>🚌 Informações do Veículo</h2><div class="obs-box">${veiculo.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`:''}
     ${obs?`<h2>📝 Outras Informações</h2><div class="obs-box">${obs.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`:''}`;
-  // Set filename using trip date
+    // Set filename using trip date
   const tLabel=DAYS[currentDay].label;
   const tParts=tLabel.split(' ');
   let tDateStr='';
@@ -3741,7 +3718,7 @@ const TUTORIAL_STEPS = [
   },
   {
     title: '📋 Lista de Faltosos',
-    body: 'Toque em <b>📋 Faltosos</b> para ver rapidamente quem <b>ainda não embarcou</b>.<br><br>A lista mostra para cada faltoso:<br>• Número da poltrona<br>• Nome completo<br>• Localidade/parada<br>• Criança de colo, se houver<br><br>Atualiza em tempo real conforme você marca os embarques.',
+    body: 'Toque em <b>✋ Ausentes</b> para ver rapidamente quem <b>ainda não embarcou</b>.<br><br>A lista mostra para cada faltoso:<br>• Número da poltrona<br>• Nome completo<br>• Localidade/parada<br>• Criança de colo, se houver<br><br>Atualiza em tempo real conforme você marca os embarques.',
     svg: `<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" width="100%">
       <rect width="320" height="200" fill="rgba(0,0,0,.5)"/>
       <rect x="0" y="80" width="320" height="120" rx="18" fill="#fff"/>
