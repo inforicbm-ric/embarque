@@ -551,7 +551,7 @@ body.dark .toast-box.err{background:#8b1f1f}
 <meta name="theme-color" content="#1976d2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="app-version" content="2.0.8"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
+<meta name="app-version" content="2.0.9"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
 <script>
 // Cache buster: append version to force reload on update
 (function(){
@@ -2450,17 +2450,23 @@ function shareWhatsApp(){
   const dayLabel=DAYS[currentDay].title ? DAYS[currentDay].title+' — '+DAYS[currentDay].label : DAYS[currentDay].label;
   const total=Object.keys(P).length;
 
-  const embarcados=[],faltando=[],colos=[];
+  const embarcados=[],aEmbarcarList=[],colos=[];
   for(let n in P){
     const num=Number(n);
-    if(chk[num]) embarcados.push({num,nome:P[num].n,loc:P[num].l});
-    else faltando.push({num,nome:P[num].n,loc:P[num].l});
+    const isEmpty = !P[num].n || P[num].n==='-' || P[num].n==='−';
+    if(!isEmpty){
+      if(chk[num]) embarcados.push({num,nome:P[num].n,loc:P[num].l});
+      else aEmbarcarList.push({num,nome:P[num].n,loc:P[num].l});
+    }
     if(P[num].c) colos.push({num,nome:P[num].n,colo:P[num].c});
   }
+  const ausentes=[...AUSENTES].sort((a,b)=>a.seat-b.seat);
   const obs=document.getElementById('obs-field').value.trim();
   const motorista=document.getElementById('motorista-field').value.trim();
   const veiculo=document.getElementById('veiculo-field').value.trim();
-  const totalPessoas=total+colos.length;
+  const cadastrados=embarcados.length+aEmbarcarList.length;
+  const totalPessoas=cadastrados+colos.length;
+  const capacidade=Object.keys(P).length;
 
   let msg='';
   msg+='🚌 *RELATÓRIO DE EMBARQUE*\n';
@@ -2468,12 +2474,13 @@ function shareWhatsApp(){
   msg+='🕐 Gerado às '+timeStr+' de '+dateStr+'\n';
   msg+='━━━━━━━━━━━━━━━━━━━━\n';
   msg+='📊 *RESUMO*\n';
-  msg+='▶ Capacidade: '+total+'\n';
+  msg+='▶ Capacidade: '+capacidade+'\n';
   msg+='✅ Embarcados: '+embarcados.length+'\n';
-  msg+='❌ A Embarcar: '+faltando.length+'\n';
+  msg+='⏳ A Embarcar: '+aEmbarcarList.length+'\n';
+  if(ausentes.length>0) msg+='✋ Ausentes: '+ausentes.length+'\n';
   if(colos.length>0){
     msg+='👶 No colo: '+colos.length+'\n';
-    msg+='👥 Total de pessoas: '+totalPessoas+'\n';
+    msg+='👥 Total de Passageiros: '+totalPessoas+'\n';
   }
   msg+='━━━━━━━━━━━━━━━━━━━━\n';
   msg+='✅ *EMBARCADOS*\n';
@@ -2487,13 +2494,20 @@ function shareWhatsApp(){
     });
   }
   msg+='━━━━━━━━━━━━━━━━━━━━\n';
-  msg+='❌ *FALTOSOS*\n';
-  if(faltando.length===0){
+  msg+='⏳ *A EMBARCAR*\n';
+  if(aEmbarcarList.length===0){
     msg+='Todos embarcaram! 🎉\n';
   } else {
-    faltando.forEach(p=>{
+    aEmbarcarList.forEach(p=>{
       const coloTag=P[p.num].c?(' + 👶 '+shortName(P[p.num].c)):'';
       msg+=String(p.num).padStart(2,'0')+' - '+shortName(p.nome)+' ['+p.loc+']'+coloTag+'\n';
+    });
+  }
+  if(ausentes.length>0){
+    msg+='━━━━━━━━━━━━━━━━━━━━\n';
+    msg+='✋ *AUSENTES*\n';
+    ausentes.forEach(a=>{
+      msg+=String(a.seat).padStart(2,'0')+' - '+shortName(a.nome)+' ['+a.loc+']'+(a.colo?' + 👶 '+shortName(a.colo):'')+'\n';
     });
   }
   if(colos.length>0){
@@ -2512,13 +2526,6 @@ function shareWhatsApp(){
     msg+='━━━━━━━━━━━━━━━━━━━━\n';
     msg+='🚌 *INFORMAÇÕES DO VEÍCULO*\n';
     msg+=veiculo+'\n';
-  }
-  if(AUSENTES && AUSENTES.length>0){
-    msg+='━━━━━━━━━━━━━━━━━━━━\n';
-    msg+='✋ *AUSENTES*\n';
-    [...AUSENTES].sort((a,b)=>a.seat-b.seat).forEach(a=>{
-      msg+=String(a.seat).padStart(2,'0')+' - '+shortName(a.nome)+' ('+a.loc+')'+(a.colo?' + 👶 '+shortName(a.colo):'')+'\n';
-    });
   }
   if(obs){
     msg+='━━━━━━━━━━━━━━━━━━━━\n';
