@@ -524,6 +524,26 @@ body.dark .toast-box.err{background:#8b1f1f}
   body.dark .trip-backup-item label small{color:#777}
   body.dark .trip-backup-cancel{background:#2a2a2a;border-color:#3a3a3a;color:#aaa}
   body.dark .trip-backup-empty{color:#555}
+
+  .falt-tabs{display:flex;border-bottom:1px solid #f0f0f0;margin-bottom:8px}
+  .falt-tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;color:#888;border-bottom:2px solid transparent}
+  .falt-tab.active{color:#1a3a5c;border-bottom:2px solid #1a3a5c}
+  body.dark .falt-tab.active{color:#4dd9a0;border-bottom-color:#4dd9a0}
+  .falt-item-delete{background:none;border:none;color:#c0303a;font-size:16px;cursor:pointer;padding:4px;flex-shrink:0}
+  /* Confirm dialog for makeEmpty */
+  #make-empty-confirm{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;align-items:center;justify-content:center}
+  .make-empty-box{background:#fff;border-radius:16px;padding:24px 20px;max-width:320px;width:90%;text-align:center}
+  .make-empty-box h3{font-size:15px;font-weight:700;color:#1a3a5c;margin-bottom:8px}
+  .make-empty-box p{font-size:13px;color:#555;margin-bottom:18px;line-height:1.5}
+  .make-empty-btns{display:flex;flex-direction:column;gap:8px}
+  .btn-faltou{padding:11px;background:#c0303a;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  .btn-so-vazio{padding:11px;background:#fff;border:1.5px solid #8D6E63;border-radius:8px;color:#8D6E63;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn-cancelar-vazio{padding:10px;background:none;border:1.5px solid #ddd;border-radius:8px;color:#888;font-size:13px;cursor:pointer;font-family:inherit}
+  body.dark .make-empty-box{background:#1e1e1e}
+  body.dark .make-empty-box h3{color:#4dd9a0}
+  body.dark .make-empty-box p{color:#aaa}
+  body.dark .btn-so-vazio{background:#1e1e1e;border-color:#8D6E63}
+  body.dark .btn-cancelar-vazio{border-color:#3a3a3a;color:#666}
 </style>
 
 
@@ -531,7 +551,7 @@ body.dark .toast-box.err{background:#8b1f1f}
 <meta name="theme-color" content="#1976d2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="app-version" content="2.0.6"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
+<meta name="app-version" content="2.0.7"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
 <script>
 // Cache buster: append version to force reload on update
 (function(){
@@ -659,12 +679,29 @@ body.dark .toast-box.err{background:#8b1f1f}
   </div>
 </div>
 
+<!-- Make Empty Confirm -->
+<div id="make-empty-confirm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;align-items:center;justify-content:center">
+  <div class="make-empty-box">
+    <h3 id="make-empty-title">💺 Desocupar Poltrona</h3>
+    <p id="make-empty-msg">O que aconteceu com este passageiro?</p>
+    <div class="make-empty-btns">
+      <button class="btn-faltou" onclick="confirmMakeEmpty(true)">✋ Faltou — registrar como ausente</button>
+      <button class="btn-so-vazio" onclick="confirmMakeEmpty(false)">💺 Só deixar vazio</button>
+      <button class="btn-cancelar-vazio" onclick="cancelMakeEmpty()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Faltosos -->
 <div id="falt-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:998;align-items:flex-end;justify-content:center">
   <div class="falt-panel">
     <div class="falt-header">
       <h3>❌ Faltosos <span id="falt-count-badge" style="background:#f4a12b;color:#fff;border-radius:10px;padding:2px 8px;font-size:12px;margin-left:4px">0</span></h3>
       <button class="falt-close" onclick="document.getElementById('falt-overlay').style.display='none'">×</button>
+    </div>
+    <div class="falt-tabs">
+      <div class="falt-tab active" id="tab-nao-emb" onclick="switchFaltTab('nao-emb')">📋 Não embarcados</div>
+      <div class="falt-tab" id="tab-ausentes" onclick="switchFaltTab('ausentes')">✋ Ausentes <span id="ausentes-badge" style="background:#c0303a;color:#fff;border-radius:8px;padding:1px 6px;font-size:11px;margin-left:3px">0</span></div>
     </div>
     <div class="falt-body" id="falt-body"></div>
   </div>
@@ -927,6 +964,7 @@ body.dark .toast-box.err{background:#8b1f1f}
 <script>
 let DAYS = [];
 let HISTORY = [];
+let AUSENTES = []; // passengers who missed the trip
 
 // layout is generated dynamically in buildMap based on actual passengers
 
@@ -955,8 +993,14 @@ function renderHome(){
   visibleDays.forEach((day,i)=>{
     const state=loadDayState(i);
     const emb=Object.values(state.chk).filter(Boolean).length;
-    // Count only registered passengers (not empty seats) for progress
-    const total=Object.values(day.passengers).filter(p=>p.n && p.n!=='-' && p.n!=='−').length;
+    // Load saved names from localStorage to count manually registered passengers
+    let passengers = {...day.passengers};
+    try{
+      const nm=localStorage.getItem('day'+i+'_names');
+      if(nm){ const o=JSON.parse(nm); for(let n in o) if(passengers[n]) passengers[n]={...passengers[n], n:o[n]}; }
+    }catch(e){}
+    // Count only registered passengers (not empty seats)
+    const total=Object.values(passengers).filter(p=>p.n && p.n!=='-' && p.n!=='−').length;
     const pct=total>0?Math.round(emb/total*100):0;
     const icons=['📅🚌','📅🚌','📅🚌'];
     const wrap=document.createElement('div');
@@ -1001,6 +1045,7 @@ function renderHome(){
 }
 
 function goHome(){
+  if(currentDay !== null) saveAusentes(currentDay);
   document.getElementById('home-screen').style.display='flex';
   document.getElementById('app-screen').style.display='none';
   currentDay=null;
@@ -1025,9 +1070,11 @@ function openDay(i){
   chk={}; hor={}; locColors={}; currentSort='seat';
   activeFilter='TODOS';
   reorderMode=false;
+  AUSENTES=[];
 
   // Load saved state
   loadState();
+  loadAusentes();
 
   document.getElementById('top-title').textContent=day.label;
   document.getElementById('home-screen').style.display='none';
@@ -1780,7 +1827,18 @@ function showAlertCompleto(totalPessoas){
 }
 
 // ===== FALTOSOS =====
-function showFaltosos(){
+
+let currentFaltTab = 'nao-emb';
+
+function switchFaltTab(tab){
+  currentFaltTab = tab;
+  document.getElementById('tab-nao-emb').classList.toggle('active', tab==='nao-emb');
+  document.getElementById('tab-ausentes').classList.toggle('active', tab==='ausentes');
+  if(tab === 'nao-emb') renderNaoEmbarcados();
+  else renderAusentesList();
+}
+
+function renderNaoEmbarcados(){
   const faltando=[];
   for(let n in P){const num=Number(n);if(!chk[num])faltando.push({num,nome:P[num].n,loc:P[num].l,colo:P[num].c});}
   document.getElementById('falt-count-badge').textContent=faltando.length;
@@ -1788,6 +1846,32 @@ function showFaltosos(){
   body.innerHTML=faltando.length===0
     ?'<div class="falt-empty">🎉 Todos embarcaram!</div>'
     :faltando.map(p=>`<div class="falt-item"><div class="falt-num">${String(p.num).padStart(2,'0')}</div><div class="falt-info"><div class="falt-name">${p.nome}${p.colo?' <span style="font-size:11px;color:#888">+ 👶 '+p.colo+'</span>':''}</div><div class="falt-loc">📍 ${p.loc}</div></div></div>`).join('');
+}
+
+function renderAusentesList(){
+  const body=document.getElementById('falt-body');
+  updateAusentesBadge();
+  if(!AUSENTES||AUSENTES.length===0){
+    body.innerHTML='<div class="falt-empty">Nenhum ausente registrado.</div>';
+    return;
+  }
+  body.innerHTML=[...AUSENTES].sort((a,b)=>a.seat-b.seat).map((a,i)=>`
+    <div class="falt-item">
+      <div class="falt-num">${String(a.seat).padStart(2,'0')}</div>
+      <div class="falt-info">
+        <div class="falt-name">${a.nome}${a.colo?' <span style="font-size:11px;color:#888">+ 👶 '+a.colo+'</span>':''}</div>
+        <div class="falt-loc">📍 ${a.loc} <span style="color:#aaa;font-size:10px">· ${a.addedAt}</span></div>
+      </div>
+      <button class="falt-item-delete" onclick="deleteAusente(${i})" title="Remover">🗑️</button>
+    </div>`).join('');
+}
+
+function showFaltosos(){
+  currentFaltTab = 'nao-emb';
+  document.getElementById('tab-nao-emb').classList.add('active');
+  document.getElementById('tab-ausentes').classList.remove('active');
+  updateAusentesBadge();
+  renderNaoEmbarcados();
   document.getElementById('falt-overlay').style.display='flex';
   try{ history.pushState({page:'overlay'}, '', ''); }catch(e){}
 }
@@ -1867,20 +1951,82 @@ function onLocSelectChange(val){
   }
 }
 
+let pendingEmptySeat = null;
+
 function makeEmpty(){
-  if(!confirm('Desocupar esta poltrona?\n\nO passageiro, criança de colo e localidade serão removidos.')) return;
-  const n=editingSeat;
-  P[n].n='-';
-  P[n].l='VAZIO';
+  const n = editingSeat;
+  if(!n || P[n].n === '-') return; // already empty, just close
+  pendingEmptySeat = n;
+  const name = P[n].n;
+  document.getElementById('make-empty-title').textContent = '💺 Desocupar Poltrona ' + String(n).padStart(2,'0');
+  document.getElementById('make-empty-msg').textContent = 'O que aconteceu com ' + shortName(name) + '?';
+  document.getElementById('make-empty-confirm').style.display = 'flex';
+  try{ history.pushState({page:'overlay'}, '', ''); }catch(e){}
+}
+
+function cancelMakeEmpty(){
+  document.getElementById('make-empty-confirm').style.display = 'none';
+  pendingEmptySeat = null;
+}
+
+function confirmMakeEmpty(faltou){
+  document.getElementById('make-empty-confirm').style.display = 'none';
+  const n = pendingEmptySeat;
+  pendingEmptySeat = null;
+  if(!n) return;
+
+  if(faltou){
+    // Register as ausente — replace if same seat already exists
+    const existing = AUSENTES.findIndex(a => a.seat === n);
+    const record = {
+      seat: n,
+      nome: P[n].n,
+      loc: P[n].l,
+      colo: P[n].c || null,
+      addedAt: new Date().toLocaleDateString('pt-BR')
+    };
+    if(existing > -1) AUSENTES[existing] = record;
+    else AUSENTES.push(record);
+    saveAusentes();
+  }
+
+  // Clear the seat
+  P[n].n = '-';
+  P[n].l = 'VAZIO';
   delete P[n].c;
-  chk[n]=false;
+  chk[n] = false;
   delete hor[n];
   syncLocs();
   buildMap();
-  if(activeFilter!=='TODOS') setFilter(activeFilter);
+  if(activeFilter !== 'TODOS') setFilter(activeFilter);
   updateStats();
   saveState();
   closeEdit();
+}
+
+function saveAusentes(idx){
+  const i = idx !== undefined ? idx : currentDay;
+  if(i === null || i === undefined) return;
+  try{ localStorage.setItem('day'+i+'_ausentes', JSON.stringify(AUSENTES)); }catch(e){}
+}
+
+function loadAusentes(){
+  try{
+    const d = localStorage.getItem('day'+currentDay+'_ausentes');
+    AUSENTES = d ? JSON.parse(d) : [];
+  }catch(e){ AUSENTES = []; }
+}
+
+function deleteAusente(idx){
+  AUSENTES.splice(idx, 1);
+  saveAusentes();
+  renderAusentesList();
+  updateAusentesBadge();
+}
+
+function updateAusentesBadge(){
+  const badge = document.getElementById('ausentes-badge');
+  if(badge) badge.textContent = AUSENTES.length;
 }
 function closeEdit(){document.getElementById('edit-overlay').style.display='none';editingSeat=null;}
 function syncLocs(){
@@ -2390,6 +2536,13 @@ function shareWhatsApp(){
     msg+='🚌 *INFORMAÇÕES DO VEÍCULO*\n';
     msg+=veiculo+'\n';
   }
+  if(AUSENTES && AUSENTES.length>0){
+    msg+='━━━━━━━━━━━━━━━━━━━━\n';
+    msg+='✋ *AUSENTES*\n';
+    [...AUSENTES].sort((a,b)=>a.seat-b.seat).forEach(a=>{
+      msg+=String(a.seat).padStart(2,'0')+' - '+shortName(a.nome)+' ('+a.loc+')'+(a.colo?' + 👶 '+shortName(a.colo):'')+'\n';
+    });
+  }
   if(obs){
     msg+='━━━━━━━━━━━━━━━━━━━━\n';
     msg+='📝 *OUTRAS INFORMAÇÕES*\n';
@@ -2427,6 +2580,8 @@ function archiveTrip(i){
   const obs=localStorage.getItem('day'+i+'_obs')||'';
   const motorista=localStorage.getItem('day'+i+'_motorista')||'';
   const veiculo=localStorage.getItem('day'+i+'_veiculo')||'';
+  let ausentesSnap=[];
+  try{const d=localStorage.getItem('day'+i+'_ausentes');if(d)ausentesSnap=JSON.parse(d);}catch(e){}
   let loccolors={};
   try{const lc=localStorage.getItem('day'+i+'_loccolors');if(lc)loccolors=JSON.parse(lc);}catch(e){}
   let horSnapshot={};
@@ -2451,19 +2606,19 @@ function archiveTrip(i){
     title:DAYS[i].title||'',
     total,emb,obs,
     archivedAt:new Date().toLocaleDateString('pt-BR'),
-    motorista, veiculo, loccolors, hor:horSnapshot,
+    motorista, veiculo, loccolors, hor:horSnapshot, ausentes:ausentesSnap,
     passengers:passengersCopy,
     locs:JSON.parse(JSON.stringify(DAYS[i].locs||[])),
     chk:state.chk
   });
 
   // Clear localStorage for this day
-  ['chk','hor','names','colos','locs','loccolors','obs','motorista','veiculo'].forEach(k=>{
+  ['chk','hor','names','colos','locs','loccolors','obs','motorista','veiculo','ausentes'].forEach(k=>{
     try{ localStorage.removeItem('day'+i+'_'+k); }catch(e){}
   });
   // Shift remaining days
   for(let j=i+1;j<DAYS.length;j++){
-    ['chk','hor','names','colos','locs','loccolors','obs','motorista','veiculo'].forEach(k=>{
+    ['chk','hor','names','colos','locs','loccolors','obs','motorista','veiculo','ausentes'].forEach(k=>{
       try{
         const val=localStorage.getItem('day'+j+'_'+k);
         if(val!==null){ localStorage.setItem('day'+(j-1)+'_'+k,val); localStorage.removeItem('day'+j+'_'+k); }
@@ -2544,6 +2699,9 @@ function restoreHistory(i){
   if(h.loccolors && Object.keys(h.loccolors).length>0){
     try{ localStorage.setItem('day'+tempIndex+'_loccolors', JSON.stringify(h.loccolors)); }catch(e){}
   }
+  if(h.ausentes && h.ausentes.length>0){
+    try{ localStorage.setItem('day'+tempIndex+'_ausentes', JSON.stringify(h.ausentes)); }catch(e){}
+  }
 
   sortDays();
 
@@ -2580,7 +2738,7 @@ function parseLabelDate(label){
 }
 
 function sortDays(){
-  const keys=['chk','hor','names','colos','locs','loccolors','obs','motorista','veiculo'];
+  const keys=['chk','hor','names','colos','locs','loccolors','obs','motorista','veiculo','ausentes'];
 
   // 1. Save all current localStorage data mapped by label+title (unique identifier)
   const dataByKey={};
@@ -2654,7 +2812,7 @@ function confirmCreateTrip(){
   // After sortDays, find the new trip's index and clear its data to prevent inheritance
   const newIndex = DAYS.findIndex(d=>d.label===dateLabel && d.title===titleVal);
   if(newIndex > -1){
-    ['chk','hor','names','colos','locs','loccolors','obs','motorista','veiculo'].forEach(k=>{
+    ['chk','hor','names','colos','locs','loccolors','obs','motorista','veiculo','ausentes'].forEach(k=>{
       try{ localStorage.removeItem('day'+newIndex+'_'+k); }catch(e){}
     });
   }
@@ -2999,6 +3157,10 @@ function updateTripBackupBtn(){
   const any=document.querySelectorAll('#trip-backup-list input:checked').length>0;
   document.getElementById('trip-backup-export-btn').disabled=!any;
 }
+function getTripAusentes(i){
+  try{ const d=localStorage.getItem('day'+i+'_ausentes'); return d?JSON.parse(d):[]; }catch(e){ return []; }
+}
+
 function exportTripBackup(){
   const checked=Array.from(document.querySelectorAll('#trip-backup-list input:checked')).map(cb=>parseInt(cb.value));
   if(!checked.length){ showToast('Selecione pelo menos uma viagem.', true); return; }
