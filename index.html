@@ -544,6 +544,26 @@ body.dark .toast-box.err{background:#8b1f1f}
   body.dark .make-empty-box p{color:#aaa}
   body.dark .btn-so-vazio{background:#1e1e1e;border-color:#8D6E63}
   body.dark .btn-cancelar-vazio{border-color:#3a3a3a;color:#666}
+
+  /* Prevent text selection and context menu on long press */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body, .seat, .day-card, .day-card-wrap, .filter-btn, .filter-wrap, button {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  /* Allow text selection only in input fields and textareas */
+  input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+  }
 </style>
 
 
@@ -551,7 +571,7 @@ body.dark .toast-box.err{background:#8b1f1f}
 <meta name="theme-color" content="#1976d2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="app-version" content="2.0.9"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
+<meta name="app-version" content="2.1"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
 <script>
 // Cache buster: append version to force reload on update
 (function(){
@@ -1148,6 +1168,7 @@ function buildFilters(locs){
     let holdTimer=null, isDragging=false, clone=null, moved=false;
 
     btn.addEventListener('touchstart', e=>{
+      e.preventDefault(); // prevent text selection and context menu
       moved=false;
       holdTimer=setTimeout(()=>{
         isDragging=true;
@@ -1160,7 +1181,7 @@ function buildFilters(locs){
         document.body.appendChild(clone);
         if(navigator.vibrate) navigator.vibrate(60);
       }, 800);
-    },{passive:true});
+    },{passive:false});
 
     btn.addEventListener('touchmove', e=>{
       moved=true;
@@ -1432,9 +1453,11 @@ function createSeatEl(n){
   if(chk[n]){seat.classList.add('checked');seat.querySelector('.chk').style.display='block';}
 
   let pressTimer=null, moved=false;
-  seat.addEventListener('touchstart',()=>{
+  seat.addEventListener('touchstart',(e)=>{
     moved=false;
     pressTimer=setTimeout(()=>{ pressTimer=null; openEdit(n); },700);
+    // Prevent text selection on long press after timer fires
+    setTimeout(()=>{ if(pressTimer===null) e.preventDefault && document.getSelection()&&document.getSelection().removeAllRanges(); },700);
   },{passive:true});
   seat.addEventListener('touchmove',()=>{
     moved=true;
@@ -2114,6 +2137,57 @@ function getTextColor(bg){
   return lightBgs.includes(bg)?'#111':'#fff';
 }
 
+
+function isIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
+function printReport(reportId, filename){
+  const oldTitle = document.title;
+  document.title = filename;
+  if(isIOS()){
+    // iOS Safari: open in new window
+    const reportEl = document.getElementById(reportId);
+    if(!reportEl){ window.print(); return; }
+    const html = reportEl.innerHTML;
+    const styles = Array.from(document.styleSheets).map(ss=>{
+      try{ return Array.from(ss.cssRules).map(r=>r.cssText).join(' '); }catch(e){ return ''; }
+    }).join(' ');
+    const printWindow = window.open('', '_blank');
+    if(printWindow){
+      const docContent = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>' + filename + '</title><style>body{font-family:Arial,sans-serif;padding:20px;color:#111;background:#fff}' + styles + '@media print{body{padding:0}}
+  /* Prevent text selection and context menu on long press */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body, .seat, .day-card, .day-card-wrap, .filter-btn, .filter-wrap, button {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  /* Allow text selection only in input fields and textareas */
+  input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+  }
+</style></head><body>' + html + '<sc' + 'ript>window.onload=function(){setTimeout(function(){window.print();},400);};</' + 'script></body></html>';
+      printWindow.document.write(docContent);
+      printWindow.document.close();
+      setTimeout(()=>{ document.title=oldTitle; },3000);
+      return;
+    }
+  }
+  // Android / Windows / Desktop: use window.print() directly
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{ document.title=oldTitle; },3000);
+  },300);
+}
 // ===== PDF =====
 let pdfSortChoice='seat';
 
@@ -2356,12 +2430,7 @@ function exportMapPDF(){
     const dp=tripDateParts[1].split('/');
     if(dp.length===3) tripDateStr=dp[0]+'-'+dp[1]+'-'+dp[2];
   }
-  const oldTitle=document.title;
-  document.title='Embarque_'+(tripDateStr||dateStr);
-  setTimeout(()=>{
-    window.print();
-    setTimeout(()=>{ document.title=oldTitle; },3000);
-  },300);
+  printReport('pdf-map-report', 'Embarque_'+(tripDateStr||dateStr));
 }
 
 function exportPDF(){
@@ -2433,12 +2502,7 @@ function exportPDF(){
   const tParts=tLabel.split(' ');
   let tDateStr='';
   if(tParts.length>=2){const dp=tParts[1].split('/');if(dp.length===3)tDateStr=dp[0]+'-'+dp[1]+'-'+dp[2];}
-  const oldT=document.title;
-  document.title='Embarque_'+(tDateStr||dateStr);
-  setTimeout(()=>{
-    window.print();
-    setTimeout(()=>{ document.title=oldT; },3000);
-  },300);
+  printReport('pdf-report', 'Embarque_'+(tDateStr||dateStr));
 }
 
 
