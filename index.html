@@ -568,7 +568,7 @@ body.dark .toast-box.err{background:#8b1f1f}
 <meta name="theme-color" content="#1976d2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="app-version" content="2.1.1"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
+<meta name="app-version" content="2.1.2"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
 <script>
 // Cache buster: append version to force reload on update
 (function(){
@@ -1948,7 +1948,7 @@ function openEdit(n){
   const emptyBtn=document.getElementById('btn-make-empty');
   if(emptyBtn) emptyBtn.style.display=(P[n].n && P[n].n!=='-')?'block':'none';
   document.getElementById('edit-overlay').style.display='flex';
-  setTimeout(()=>document.getElementById('edit-input').focus(),100);
+  // focus removed — prevents keyboard from opening automatically
   try{ history.pushState({page:'overlay'}, '', ''); }catch(e){}
 }
 
@@ -1956,7 +1956,7 @@ function onLocSelectChange(val){
   const newInput=document.getElementById('edit-loc-new');
   if(val==='__nova__'){
     newInput.style.display='block';
-    newInput.focus();
+    // newInput.focus() removed — user taps to focus
   } else {
     newInput.style.display='none';
     newInput.value='';
@@ -2800,7 +2800,7 @@ function openCreateTrip(){
   document.getElementById('trip-date').value = today;
   document.getElementById('trip-seats').value = '';
   document.getElementById('create-trip-overlay').style.display='flex';
-  setTimeout(()=>document.getElementById('trip-title').focus(), 100);
+  // focus removed — prevents keyboard from opening automatically
   try{ history.pushState({page:'overlay'}, '', ''); }catch(e){}
 }
 function closeCreateTrip(){
