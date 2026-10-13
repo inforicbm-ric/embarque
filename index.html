@@ -10,21 +10,70 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh;overscroll-behavior-y:none}
 
 /* ===== TELA INICIAL ===== */
-#home-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+#home-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;background:#f0f3f8;padding:0}
+  .home-header{width:100%;background:linear-gradient(160deg,#0d2137 0%,#1a3a5c 100%);padding:20px 20px 14px 20px;display:flex;flex-direction:column;align-items:flex-start;position:relative}
+  .home-header-top{position:absolute;top:10px;right:14px}
+  .home-dark-top{background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:5px 8px;font-size:16px;cursor:pointer;color:#fff;line-height:1}
+  .home-dark-top:active{background:rgba(255,255,255,.28)}
+  .home-header-btns{display:none}
+  .home-icon-wrap{display:none}
+  .home-header-date{font-size:11px;font-weight:600;color:rgba(255,255,255,.6);margin-bottom:4px;text-transform:capitalize;letter-spacing:.3px}
+  .home-title{font-size:20px;font-weight:800;color:#ffffff !important;letter-spacing:-.2px;margin-bottom:3px;line-height:1.2;white-space:nowrap;text-shadow:none}
+  .home-sub{font-size:12px;color:rgba(255,255,255,.65);font-weight:400;margin-bottom:0}
+  .home-search-wrap{margin-top:10px;width:100%;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;gap:8px;padding:10px 14px;backdrop-filter:blur(4px)}
+  .home-search-input{background:none;border:none;outline:none;color:#fff;font-size:14px;font-family:inherit;flex:1;width:100%}
+  .home-search-input::placeholder{color:rgba(255,255,255,.5)}
+  .home-search-icon{color:rgba(255,255,255,.6);font-size:15px;flex-shrink:0}
+  body.dark .home-header{background:linear-gradient(160deg,#060e17 0%,#0d1f33 100%)}
+  .home-search-results{background:#fff;border-radius:12px;margin-top:8px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.12);display:none}
+  .home-search-item{padding:12px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;display:flex;align-items:center;gap:10px}
+  .home-search-item:last-child{border-bottom:none}
+  .home-search-item:active{background:#f5f5f5}
+  .home-search-item-info{flex:1}
+  .home-search-item-title{font-size:13px;font-weight:700;color:#1a3a5c}
+  .home-search-item-sub{font-size:11px;color:#888;margin-top:2px}
+  .home-search-item-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0}
+  .badge-active{background:#e6f9f0;color:#1a8a52}
+  .badge-history{background:#f0f3f8;color:#888}
+  body.dark .home-search-results{background:#1e1e1e}
+  body.dark .home-search-item{border-color:#2a2a2a}
+  body.dark .home-search-item-title{color:#4dd9a0}
+  body.dark .home-search-item:active{background:#2a2a2a}
+  .home-body{width:100%;max-width:420px;padding:16px 16px 90px;flex:1;display:flex;flex-direction:column}
+  .home-section-label{font-size:11px;font-weight:700;color:#8899aa;letter-spacing:1.2px;text-transform:uppercase;margin:0 0 10px 2px}
+  .home-footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e8ecf0;display:flex;align-items:center;justify-content:space-around;padding:10px 8px 14px;z-index:100;box-shadow:0 -2px 12px rgba(0,0,0,.06)}
+  .home-footer-btn{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:6px 12px;border-radius:10px;font-family:inherit;color:#555;font-size:10px;font-weight:600}
+  .home-footer-btn:active{background:#f0f3f8}
+  .home-footer-btn .hf-icon{font-size:22px;line-height:1}
+  .home-footer-create{background:linear-gradient(135deg,#1a3a5c,#1e4d7b) !important;color:#fff !important;border-radius:12px !important;padding:8px 16px !important;box-shadow:0 3px 10px rgba(26,58,92,.3)}
+  .home-footer-create .hf-icon{color:#fff !important;font-size:20px}
+  .home-footer-create:active{opacity:.9 !important;background:linear-gradient(135deg,#122840,#1a3a5c) !important}
+  body.dark .home-footer{background:#1a1a1a;border-color:#2a2a2a}
+  body.dark .home-footer-btn{color:#888}
+  body.dark .home-footer-btn:active{background:#2a2a2a}
+  body.dark #home-screen{background:#0d1520}
+  body.dark .home-header{background:linear-gradient(160deg,#060e17 0%,#0d1f33 100%)}
 .home-icon{font-size:52px;margin-bottom:12px}
 .home-title{font-size:22px;font-weight:800;color:#1a3a5c;margin-bottom:4px;text-align:center}
 .home-sub{font-size:14px;color:#888;margin-bottom:28px;text-align:center}
-.day-cards{width:100%;max-width:380px;display:flex;flex-direction:column;gap:12px}
-.day-card{background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;display:flex;align-items:center;gap:14px;transition:transform .1s,box-shadow .1s}
-.day-card:active{transform:scale(0.98);box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.day-card-icon{width:46px;height:46px;border-radius:12px;background:#1a3a5c;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
-.day-card-info{flex:1}
-.day-card-label{font-size:16px;font-weight:700;color:#1a3a5c}
-.day-card-sub{font-size:12px;color:#888;margin-top:2px}
-.day-card-prog{margin-top:6px;background:#f0f0f0;border-radius:10px;height:6px;overflow:hidden}
-.day-card-bar{height:6px;border-radius:10px;background:linear-gradient(90deg,#4dd9a0,#2ab87a);transition:width .4s}
-.day-card-pct{font-size:11px;color:#4dd9a0;font-weight:700;margin-top:3px}
-.day-card-arrow{font-size:20px;color:#ccc;flex-shrink:0}
+.day-cards{width:100%;display:flex;flex-direction:column;gap:0}
+.day-card{background:#fff;border-radius:16px;padding:0;box-shadow:0 2px 12px rgba(0,0,0,.08);cursor:pointer;display:flex;align-items:stretch;transition:transform .15s,box-shadow .15s;overflow:hidden;margin-bottom:12px}
+.day-card:active{transform:scale(0.98);box-shadow:0 1px 6px rgba(0,0,0,.08)}
+.day-card-stripe{width:5px;flex-shrink:0;background:linear-gradient(180deg,#4dd9a0,#1a8a52)}
+.day-card-icon{width:52px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;background:#f7f9fc}
+.day-card-info{flex:1;padding:14px 10px 12px}
+.day-card-label{font-size:15px;font-weight:800;color:#1a3a5c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.day-card-sub{font-size:11px;color:#8899aa;margin-top:2px;display:flex;align-items:center;gap:4px}
+.day-card-prog{margin-top:8px;background:#f0f3f8;border-radius:10px;height:5px;overflow:hidden}
+.day-card-bar{height:5px;border-radius:10px;background:linear-gradient(90deg,#4dd9a0,#2ab87a);transition:width .4s}
+.day-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.day-card-pct{font-size:11px;color:#2ab87a;font-weight:700}
+.day-card-count{font-size:11px;color:#8899aa}
+.day-card-arrow{width:36px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#ccc;flex-shrink:0}
+.day-card-status{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;border-radius:6px;padding:2px 7px;margin-top:4px}
+.status-pending{background:#fff8e6;color:#d4881a}
+.status-active{background:#e6f9f0;color:#1a8a52}
+.status-done{background:#e6f9f0;color:#1a8a52}
 
 /* ===== APP SCREEN ===== */
 #app-screen{display:none}
@@ -177,9 +226,17 @@ body.dark .reset-btn:active{background:#3d0f0f}
   body.dark .home-sub{color:#666}
   body.dark .day-card{background:#1e1e1e;box-shadow:none}
   body.dark .day-card-label{color:#4dd9a0}
-  body.dark .day-card-sub{color:#666}
+  body.dark .day-card-sub{color:#555}
   body.dark .day-card-prog{background:#2a2a2a}
-  body.dark .day-card-arrow{color:#444}
+  body.dark .day-card-arrow{color:#333}
+  body.dark .day-card-icon{background:#141414}
+  body.dark #home-screen{background:#0d1520}
+  body.dark .home-header{background:linear-gradient(135deg,#060e17 0%,#0d1f33 60%,#102644 100%)}
+  body.dark .home-body .home-section-label{color:#334455}
+  body.dark .day-card-count{color:#445566}
+  body.dark .day-card-pct{color:#4dd9a0}
+  body.dark .status-pending{background:#2a1e00;color:#f4a12b}
+  body.dark .status-active{background:#0d2a1a;color:#4dd9a0}
   body.dark .bus-card{background:#1e1e1e;box-shadow:none}
   body.dark .seat{background:#2a2a2a;border-color:#3a3a3a}
   body.dark .seat .name{color:#ddd}
@@ -231,8 +288,7 @@ body.dark .reset-btn:active{background:#3d0f0f}
   .stats.with-colo{grid-template-columns:repeat(4,1fr)}
   .stat-n.colo{color:#f0a830}
 
-  .home-settings-btn{position:absolute;top:20px;left:20px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-  body.dark .home-settings-btn{background:#2a2a2a;border-color:#3a3a3a}
+  .home-settings-btn{display:none}
   #settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:996;align-items:center;justify-content:center}
   .settings-panel{background:#fff;border-radius:16px;padding:22px 20px;max-width:340px;width:90%;max-height:85vh;overflow-y:auto}
   .settings-panel h3{font-size:16px;font-weight:700;color:#1a3a5c;margin-bottom:4px;display:flex;align-items:center;gap:6px}
@@ -290,9 +346,9 @@ body.dark button[style*="background:#fff"][style*="border:1.5px solid #c0c8d4"]{
   .filter-btn.dragging{opacity:.5;transform:scale(.93);box-shadow:0 4px 12px rgba(0,0,0,.15)}
   .filter-btn.drag-over{border-color:#1a3a5c;border-style:dashed;transform:scale(1.05)}
 
-  .btn-create-trip{width:100%;max-width:380px;padding:15px;background:#1a3a5c;border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
-  .btn-create-trip:active{background:#122840}
-  body.dark .btn-create-trip{background:#2a5a8c}
+  .btn-create-trip{width:100%;padding:15px;background:linear-gradient(135deg,#1a3a5c,#1e4d7b);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(26,58,92,.35)}
+  .btn-create-trip:active{opacity:.9;transform:scale(.98)}
+  body.dark .btn-create-trip{background:linear-gradient(135deg,#0d2137,#1a3a5c)}
   .home-empty{text-align:center;color:#aaa;font-size:13px;padding:20px 0}
   body.dark .home-empty{color:#555}
 body.dark button[style*="background:#fff"][style*="border:1.5px solid #c0c8d4"]{background:#2a2a2a!important;border-color:#3a3a3a!important;color:#4dd9a0!important}
@@ -568,7 +624,7 @@ body.dark .toast-box.err{background:#8b1f1f}
 <meta name="theme-color" content="#1976d2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="app-version" content="2.1.2"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
+<meta name="app-version" content="2.1.3"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
 <script>
 // Cache buster: append version to force reload on update
 (function(){
@@ -590,16 +646,38 @@ body.dark .toast-box.err{background:#8b1f1f}
 
 <!-- TELA INICIAL -->
 <div id="home-screen">
-  <button class="home-settings-btn" onclick="openSettings()" id="home-settings-btn">⚙️</button>
-  <button class="home-settings-btn" style="right:60px;left:auto" onclick="openHistory()">📂</button>
-  <button class="home-settings-btn" style="right:105px;left:auto" onclick="startTutorial()" title="Tutorial">❓</button>
-  <button class="home-dark-btn" onclick="toggleDark()" id="home-dark-btn">🌙</button>
-  <div class="home-icon">🚌</div>
-  <div class="home-title">Controle de Embarque</div>
-  <div class="home-sub">Selecione o dia da viagem</div>
-  <div class="day-cards" id="day-cards"></div>
-  <div class="home-empty" id="home-empty" style="display:none">Nenhuma viagem criada ainda.</div>
-  <button class="btn-create-trip" onclick="openCreateTrip()">+ Criar Viagem</button>
+  <div class="home-header">
+    <div class="home-header-top">
+      <button class="home-dark-top" onclick="toggleDark()" id="home-dark-btn">🌙</button>
+    </div>
+    <div class="home-header-date" id="home-date"></div>
+    <div class="home-title">Controle de Embarque</div>
+    <div class="home-sub">Gerencie suas viagens</div>
+    <div class="home-search-wrap">
+      <span class="home-search-icon">🔍</span>
+      <input class="home-search-input" id="home-search" placeholder="Buscar viagem por nome ou data..." oninput="searchTrips(this.value)" autocomplete="off">
+    </div>
+    <div class="home-search-results" id="home-search-results"></div>
+  </div>
+  <div class="home-body">
+    <div class="home-section-label" id="home-section-label" style="display:none">Viagens Ativas</div>
+    <div class="day-cards" id="day-cards"></div>
+    <div class="home-empty" id="home-empty" style="display:none;text-align:center;color:#aaa;padding:32px 0;font-size:13px">Nenhuma viagem criada ainda.<br>Toque em <b>+ Criar Viagem</b> para começar.</div>
+  </div>
+  <div class="home-footer">
+    <button class="home-footer-btn home-footer-create" onclick="openCreateTrip()">
+      <span class="hf-icon">＋</span>Nova Viagem
+    </button>
+    <button class="home-footer-btn" onclick="openHistory()">
+      <span class="hf-icon">📂</span>Histórico
+    </button>
+    <button class="home-footer-btn" onclick="openSettings()" id="home-settings-btn">
+      <span class="hf-icon">⚙️</span>Config.
+    </button>
+    <button class="home-footer-btn" onclick="startTutorial()">
+      <span class="hf-icon">❓</span>Tutorial
+    </button>
+  </div>
 </div>
 
 <!-- UPDATE BANNER -->
@@ -690,7 +768,7 @@ body.dark .toast-box.err{background:#8b1f1f}
 
   <div class="action-btns">
     <button class="btn-pdf" onclick="openPdfPick()">📄 PDF</button>
-    <button class="btn-falt" onclick="showFaltosos()">✋ Ausentes</button>
+    <button class="btn-falt" onclick="showFaltosos()">✋ Ausentes <span id="ausentes-action-badge" style="background:rgba(0,0,0,.2);border-radius:10px;padding:1px 6px;font-size:11px;margin-left:2px;display:none">0</span></button>
     <button class="btn-wpp" onclick="shareWhatsApp()">📲 WhatsApp</button>
     <button class="btn-back" onclick="goHome()">← Voltar</button>
   </div>
@@ -1019,16 +1097,28 @@ function renderHome(){
     const wrap=document.createElement('div');
     wrap.className='day-card-wrap';
 
+    // Status badge
+    const statusClass = pct===100 ? 'status-done' : emb>0 ? 'status-active' : 'status-pending';
+    const statusLabel = pct===100 ? '✅ Concluído' : emb>0 ? '🟡 Em andamento' : '⚪ Não iniciado';
+    // Stripe color based on progress
+    const stripeColor = pct===100 ? 'linear-gradient(180deg,#4dd9a0,#2ab87a)' : emb>0 ? 'linear-gradient(180deg,#f4a12b,#e8891a)' : 'linear-gradient(180deg,#c0c8d4,#a0a8b4)';
+
     const card=document.createElement('div');
     card.className='day-card';
     card.innerHTML=`
+      <div class="day-card-stripe" style="background:${stripeColor}"></div>
       <div class="day-card-icon">🚌</div>
-      <div class="day-card-info" style="flex:1;min-width:0">
-        ${day.title?`<div class="day-card-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${day.title}</div>`:''}
-        <div class="day-card-sub${day.title?'':' day-card-label'}">${day.label} · ${total} passageiros</div>
+      <div class="day-card-info">
+        ${day.title?`<div class="day-card-label">${day.title}</div>`:''}
+        <div class="day-card-sub">
+          📅 ${day.label}${total>0?' · '+total+' passageiros':''}
+        </div>
+        <span class="day-card-status ${statusClass}">${statusLabel}</span>
         <div class="day-card-prog"><div class="day-card-bar" style="width:${pct}%"></div></div>
-        <div class="day-card-pct">${emb} embarcados (${pct}%)</div>
-
+        <div class="day-card-footer">
+          <div class="day-card-pct">${pct}% embarcado</div>
+          <div class="day-card-count">${emb}/${total}</div>
+        </div>
       </div>
       <div class="day-card-arrow">›</div>`;
     card.onclick=()=>openDay(i);
@@ -1057,6 +1147,16 @@ function renderHome(){
   }
 }
 
+
+function setHomeDate(){
+  const hd=document.getElementById('home-date');
+  if(!hd) return;
+  const now=new Date();
+  const dias=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const meses=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  hd.textContent=dias[now.getDay()]+', '+now.getDate()+'/'+meses[now.getMonth()]+'/'+String(now.getFullYear()).slice(2);
+}
+
 function goHome(){
   if(currentDay !== null) saveAusentes(currentDay);
   document.getElementById('home-screen').style.display='flex';
@@ -1065,6 +1165,7 @@ function goHome(){
   try{ localStorage.removeItem('current_day'); }catch(e){}
   reorgMode=false; reorgOrigin=null; currentSort='seat';
   renderHome();
+  setHomeDate();
 }
 
 // ===== OPEN DAY =====
@@ -2020,6 +2121,7 @@ function saveAusentes(idx){
   const i = idx !== undefined ? idx : currentDay;
   if(i === null || i === undefined) return;
   try{ localStorage.setItem('day'+i+'_ausentes', JSON.stringify(AUSENTES)); }catch(e){}
+  updateAusentesBadgeAction();
 }
 
 function loadAusentes(){
@@ -2027,6 +2129,7 @@ function loadAusentes(){
     const d = localStorage.getItem('day'+currentDay+'_ausentes');
     AUSENTES = d ? JSON.parse(d) : [];
   }catch(e){ AUSENTES = []; }
+  updateAusentesBadgeAction();
 }
 
 function deleteAusente(idx){
@@ -2034,6 +2137,17 @@ function deleteAusente(idx){
   saveAusentes();
   renderAusentesList();
   updateAusentesBadge();
+}
+
+function updateAusentesBadgeAction(){
+  const badge = document.getElementById('ausentes-action-badge');
+  if(!badge) return;
+  if(AUSENTES && AUSENTES.length > 0){
+    badge.textContent = AUSENTES.length;
+    badge.style.display = 'inline';
+  } else {
+    badge.style.display = 'none';
+  }
 }
 
 function updateAusentesBadge(){
@@ -2134,23 +2248,67 @@ function getTextColor(bg){
 
 
 function isIOS(){
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  // Detect iPhone, iPod, older iPad
+  if(/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) return true;
+  // Detect modern iPad (iPadOS 13+) which reports as MacIntel but has touch
+  if(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return true;
+  // Detect via userAgentData if available
+  if(navigator.userAgentData){
+    const platform = (navigator.userAgentData.platform||'').toLowerCase();
+    if(platform.includes('ios') || platform.includes('ipad')) return true;
+  }
+  return false;
 }
 
 function printReport(reportId, filename){
   const oldTitle = document.title;
   document.title = filename;
+
+  // Embedded CSS for iOS (Safari can't read document.styleSheets cross-origin)
+  const embeddedCSS = `
+    *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{font-family:Arial,sans-serif;padding:20px;color:#111;background:#fff;font-size:13px}
+    h1{font-size:18px;font-weight:800;color:#1a3a5c;margin:0 0 2px}
+    h2{font-size:14px;font-weight:700;color:#1a3a5c;margin:16px 0 6px;padding-bottom:4px;border-bottom:1px solid #e0e0e0}
+    .rdate{font-size:12px;color:#666;margin-bottom:12px}
+    .summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .sum-item{background:#f5f5f5;border-radius:6px;padding:6px 12px;text-align:center;min-width:60px}
+    .sum-n{font-size:18px;font-weight:700}
+    .sum-n.ok{color:#1a8a52}
+    .sum-n.falt{color:#c0303a}
+    .sum-l{font-size:10px;color:#666}
+    table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px}
+    th{background:#1a3a5c;color:#fff;padding:6px 8px;text-align:left;font-size:11px}
+    td{padding:5px 8px;border-bottom:1px solid #f0f0f0}
+    tr:nth-child(even) td{background:#f9f9f9}
+    .obs-box{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px;padding:8px 12px;font-size:12px;white-space:pre-wrap;margin-bottom:8px}
+    .bus-map-grid{display:grid;grid-template-columns:1fr 1fr 14px 1fr 1fr;gap:3px;margin-top:8px}
+    .bus-map-seat{border-radius:5px;padding:4px 5px;font-size:9px;min-height:44px}
+    .bus-map-corridor{display:flex;align-items:center;justify-content:center;font-size:10px;color:#bbb}
+    @media print{
+      .no-print{display:none!important}
+      body{padding:8px}
+    }
+  `;
+
   if(isIOS()){
-    // iOS Safari: open in new window
     const reportEl = document.getElementById(reportId);
     if(!reportEl){ window.print(); return; }
     const html = reportEl.innerHTML;
-    const styles = Array.from(document.styleSheets).map(ss=>{
-      try{ return Array.from(ss.cssRules).map(r=>r.cssText).join(' '); }catch(e){ return ''; }
-    }).join(' ');
     const printWindow = window.open('', '_blank');
     if(printWindow){
-      const docContent = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>' + filename + '</title><style>body{font-family:Arial,sans-serif;padding:20px;color:#111;background:#fff}' + styles + '@media print{body{padding:0}}</style></head><body>' + html + '<sc' + 'ript>window.onload=function(){setTimeout(function(){window.print();},400);};</' + 'script></body></html>';
+      const actionBar = '<div class="no-print" style="position:sticky;top:0;background:#1a3a5c;padding:10px 16px;display:flex;gap:10px;align-items:center;z-index:999">'
+        + '<button onclick="window.print()" style="flex:1;padding:10px;background:#4dd9a0;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;color:#fff">📥 Salvar como PDF</button>'
+        + '<button onclick="window.close()" style="padding:10px 16px;background:rgba(255,255,255,.2);border:none;border-radius:8px;font-size:14px;cursor:pointer;color:#fff">✕ Fechar</button>'
+        + '</div>';
+      const docContent = '<!DOCTYPE html><html lang="pt-BR"><head>'
+        + '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+        + '<title>' + filename + '</title>'
+        + '<style>' + embeddedCSS + '</style>'
+        + '</head><body>'
+        + actionBar
+        + '<div style="padding:4px">' + html + '</div>'
+        + '</body></html>';
       printWindow.document.write(docContent);
       printWindow.document.close();
       setTimeout(()=>{ document.title=oldTitle; },3000);
@@ -2595,6 +2753,55 @@ function initDarkMode(){
   }
 }
 
+
+
+function searchTrips(q){
+  const results = document.getElementById('home-search-results');
+  if(!q || q.trim().length < 1){ results.style.display='none'; return; }
+  const term = q.trim().toLowerCase();
+  const hits = [];
+  // Search active trips
+  DAYS.forEach((d,i)=>{
+    const label = (d.label||'').toLowerCase();
+    const title = (d.title||'').toLowerCase();
+    if(label.includes(term)||title.includes(term)){
+      hits.push({type:'active', label:d.label, title:d.title, index:i});
+    }
+  });
+  // Search history
+  HISTORY.forEach((h,i)=>{
+    const label = (h.label||'').toLowerCase();
+    const title = (h.title||'').toLowerCase();
+    if(label.includes(term)||title.includes(term)){
+      hits.push({type:'history', label:h.label, title:h.title, index:i});
+    }
+  });
+  if(hits.length===0){
+    results.innerHTML='<div class="home-search-item"><div class="home-search-item-info"><div class="home-search-item-title">Nenhuma viagem encontrada</div></div></div>';
+  } else {
+    results.innerHTML = hits.map(h=>`
+      <div class="home-search-item" onclick="searchTripClick('${h.type}',${h.index})">
+        <span style="font-size:20px">🚌</span>
+        <div class="home-search-item-info">
+          <div class="home-search-item-title">${h.title||h.label}</div>
+          <div class="home-search-item-sub">${h.title?h.label:''}</div>
+        </div>
+        <span class="home-search-item-badge ${h.type==='active'?'badge-active':'badge-history'}">${h.type==='active'?'Ativa':'Histórico'}</span>
+      </div>`).join('');
+  }
+  results.style.display='block';
+}
+
+function searchTripClick(type, index){
+  document.getElementById('home-search').value='';
+  document.getElementById('home-search-results').style.display='none';
+  if(type==='active'){
+    openDay(index);
+  } else {
+    // Show in history panel
+    openHistory();
+  }
+}
 
 // ===== ARCHIVE / HISTORY =====
 function archiveTrip(i){
@@ -4081,12 +4288,15 @@ try{
       openDay(dayIndex);
     } else {
       renderHome();
+      setHomeDate();
     }
   } else {
     renderHome();
+    setHomeDate();
   }
 }catch(e){
   renderHome();
+  setHomeDate();
 }
 </script>
 
