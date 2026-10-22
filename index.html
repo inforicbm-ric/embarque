@@ -624,7 +624,7 @@ body.dark .toast-box.err{background:#8b1f1f}
 <meta name="theme-color" content="#1976d2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="app-version" content="2.1.4"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
+<meta name="app-version" content="2.1.5"> <!-- CHANGE THIS VERSION NUMBER ON EVERY UPDATE -->
 <script>
 // Cache buster: append version to force reload on update
 (function(){
@@ -2309,10 +2309,15 @@ function printReport(reportId, filename){
         + actionBar
         + '<div style="padding:4px">' + html + '</div>'
         + '<sc' + 'ript>'
-        + 'document.getElementById("ios-print-btn").addEventListener("click", function(){'
-        + '  this.blur();'
-        + '  setTimeout(function(){ window.focus(); window.print(); }, 300);'
-        + '});'
+        + 'function doPrint(){'
+        + '  try{ window.focus(); }catch(e){}'
+        + '  try{ document.execCommand("print", false, null); }catch(e){'
+        + '    setTimeout(function(){ window.print(); }, 100);'
+        + '  }'
+        + '}'
+        + 'var btn = document.getElementById("ios-print-btn");'
+        + 'if(btn){ btn.addEventListener("touchend", function(e){ e.preventDefault(); doPrint(); }, {passive:false}); }'
+        + 'if(btn){ btn.addEventListener("click", function(){ doPrint(); }); }'
         + '</' + 'script>'
         + '</body></html>';
       printWindow.document.write(docContent);
